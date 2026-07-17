@@ -119,7 +119,7 @@ theorem compute_rangeCompatible_eq
             exact TapeSymbol.mark.inj hr
           exact congrArg ForwardRuleId.moveRecord hid
 
-/-- Exhaustive copy-domain matrix; simplification follows full case splitting. -/
+-- Exhaustive copy-domain matrix; simplification follows full case splitting.
 set_option linter.flexible false in
 theorem copy_domainCompatible_eq
     {source : Machine SourceControl Symbol} (finish : SourceControl)
@@ -135,7 +135,7 @@ theorem copy_domainCompatible_eq
     simp_all <;>
     exact TapeSymbol.mark.inj hw
 
-/-- Exhaustive copy-range matrix; simplification follows full case splitting. -/
+-- Exhaustive copy-range matrix; simplification follows full case splitting.
 set_option linter.flexible false in
 theorem copy_rangeCompatible_eq
     {source : Machine SourceControl Symbol} (finish : SourceControl)
@@ -250,7 +250,7 @@ private theorem rangeCompatible_symm
   intro index
   exact actionRangeCompatible_symm (hcompat.2 index)
 
-/-- Boundary-domain matrix; simplification follows full case splitting. -/
+-- Boundary-domain matrix; simplification follows full case splitting.
 set_option linter.flexible false in
 theorem compute_copy_domain_incompatible
     {source : Machine SourceControl Symbol} {finish : SourceControl}
@@ -314,7 +314,7 @@ theorem compute_retrace_range_incompatible
       reverseEraseRule, reverseRestoreRule, threeRule,
       Quadruple.RangeCompatible] at hcompat
 
-/-- Boundary-range matrix; simplification follows full case splitting. -/
+-- Boundary-range matrix; simplification follows full case splitting.
 set_option linter.flexible false in
 theorem copy_retrace_range_incompatible
     {source : Machine SourceControl Symbol} {finish : SourceControl}

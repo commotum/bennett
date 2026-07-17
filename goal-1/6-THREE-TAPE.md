@@ -1,6 +1,6 @@
 # 6-THREE-TAPE
 
-**Status:** In progress.
+**Status:** Completed.
 
 ## Current Facts
 
@@ -128,4 +128,34 @@ and global rule non-overlap.
 
 ## Stage Results
 
-Pending implementation.
+- `Simulator.Core` defines the three heterogeneous tapes, disjoint phase
+  controls, exact standard endpoints, and a physical newest-first history
+  encoding whose records occupy cells `0,…,v-1` while the initial head is `-1`.
+- `Source.History` instantiates the abstract `HistoryRecorder` with intrinsic
+  source rule IDs and the validated quintuple inverse.
+- `Simulator.Compute` proves that every selected source quintuple is exactly two
+  target rules and lifts every `v`-step source run to a `2v`-rule schedule.
+- `Simulator.Copy` reconstructs all seven copy schemas and proves the exact
+  sweep for every word, including `[]`: the target must be blank at head `-1`,
+  history is unchanged, both word heads return to `-1`, and the schedule has
+  length `4λ+5`.
+- `Simulator.Reverse` proves exact two-rule history pop/source recovery and
+  lifts cleanup over an arbitrary generated run while retaining the copied
+  output.  The output head's blank-delimiter premise is explicit.
+- `Simulator.Syntax` and `Simulator.Machine` expose constructor-tagged rules and
+  transport them through an explicit enumeration to `QuadrupleMachine`.
+  Kernel-checked counts are `2f+2N+4` controls, `4N+2z+3` rules, and alphabet
+  sizes `(z,N+1,z)` with `z = card Symbol + 1`.
+- `Simulator.Nonoverlap` proves global domain and range disjointness.  The
+  strongest reusable theorem needs source key injectivity and only the weaker
+  condition that no `(finish, blank)` source rule exists; Bennett normal form
+  supplies both.  Sharp overlap theorems show why each is needed.
+- `Simulator.Correctness.central_correctness` exposes source run/halt,
+  acceptance, exact initial/final controls/tapes/heads, input retention, copied
+  output, blank history, exact time `4v+4λ+5`, relational determinism, and
+  executable-step reversibility.  `terminates_iff_source` proves both halting
+  directions on accepted standard inputs.
+- Malformed physical configurations remain executable but are intentionally
+  outside the central theorem.  Divergence preservation proves that no such
+  premature halt is reachable from a standard initial configuration while the
+  source continues.
