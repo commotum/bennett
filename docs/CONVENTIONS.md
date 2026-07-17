@@ -70,9 +70,9 @@ fits the required semantics.
   an observation onto a blank register, and reverses exactly `n` recorded steps.
   It is not an autonomous phase scheduler or an executable halting search.
 - **Selected:** exact bounded reversal preserves an arbitrary initial history
-  suffix.  A future autonomous scheduler instead needs an empty/bounded history,
-  a baseline marker, or an independently proved backward-halting boundary so it
-  does not continue into that suffix.
+  suffix.  The concrete Stage 6 scheduler instead starts from the exact blank
+  history tape at head `-1`; normal-form source syntax makes the reverse-start
+  endpoint a genuine halt, so it cannot continue into a pre-existing suffix.
 
 ## Copying
 
@@ -88,8 +88,12 @@ fits the required semantics.
 - **Selected and formalized in Stage 3:** any globally reversible output-only
   realization from a fixed blank ancilla computes an injective function.  Thus a
   noninjective computation must retain the input or equivalent recovery data.
-- **Owned by Stages 4 and 6:** the exact standard-tape copy loop and its head
-  positions before and after copying.
+- **Selected and formalized in Stage 6:** the Table 1 copy loop starts with work
+  and blank output heads at `-1`, scans the word and its right delimiter in both
+  directions, and returns both heads to `-1`.  It works for the empty word and
+  takes exactly `4λ+5` target transitions.  Its history actions are identity
+  rewrites: no record is appended or erased, but the current terminal record is
+  checked throughout the loop.
 
 ## Turing-Machine Semantics
 
@@ -142,8 +146,12 @@ fits the required semantics.
 
 ## Bennett Stage and State Conventions
 
-- **Selected:** source rules are indexed `1,…,N`, with the required entry rule at
-  index `1` and exit rule at index `N`.
+- **Selected and formalized in Stage 6:** source rules have intrinsic zero-based
+  IDs `Fin N`; normal form distinguishes `entryId` and `exitId` without imposing
+  a semantically irrelevant table ordering.  The paper's printed labels
+  `1,…,N` are presentation names only.  History symbols store these intrinsic
+  IDs, so no theorem depends on the exit rule literally being the last element
+  of an enumeration.
 - **Selected and formalized in Stage 5:** every split source rule receives its
   own fresh connector state.  `SplitState Control RuleId = Control ⊕ RuleId`
   makes connector/original disjointness and connector injectivity structural.
@@ -152,11 +160,15 @@ fits the required semantics.
   when the source rule-target map is injective.  Ordinary irreversible sources
   need not satisfy this; Bennett's Stage 6 history-symbol write is the mechanism
   that will distinguish the lower-half ranges.
-- **Selected:** forward (`A`), copy (`B`), and reverse (`C`) state families are
-  represented with constructors or disjoint sums, not informal name freshness.
-- **Selected:** the third stage uses the inverse actions in reverse trace order;
-  replacing `A` labels by `C` labels is only the syntactic control-state part of
-  that construction.
+- **Selected and formalized in Stage 6:** forward (`A`), copy (`B`), and reverse
+  (`C`) state families are disjoint constructors.  The concrete carrier has
+  forward and reverse copies of every source control and connector plus four
+  copy controls, giving exactly `2f+2N+4` states.
+- **Selected and formalized in Stage 6:** the third stage uses the inverse
+  actions in reverse trace order; replacing `A` labels by `C` labels is only the
+  syntactic control-state part of that construction.  The proved schedule pops
+  exactly the rule IDs written by the forward schedule and restores work tape,
+  work/history heads, and the blank history tape while leaving output unchanged.
 - **Selected:** the fact that each stage is reversible does not alone make their
   union reversible.  Phase tags and cross-stage domain/range disjointness are
   explicit proof obligations.
@@ -164,9 +176,12 @@ fits the required semantics.
   `PEquiv.trans` composition is itself a partial equivalence.  This proves
   injectivity of the entry-to-exit semantic macro, not determinism or
   reversibility of a union of concrete one-step phase rules.
-- **Owned by Stage 6:** whether the final concrete theorem proves global
-  non-overlap on every syntactic configuration or a weaker reachable invariant.
-  The paper intends global rule-domain/range non-overlap, so that is the target.
+- **Selected and formalized in Stage 6:** the complete Table 1 rule family has
+  globally disjoint domains and ranges on every syntactic configuration, not
+  merely on standard reachable configurations.  The reusable proof assumes
+  source key injectivity and that no source rule has key `(finish, blank)`;
+  `BennettNormalForm` supplies both.  Separate counterexamples show these
+  assumptions are sharp for the relevant boundary overlaps.
 
 ## Halting and Observable Results
 
@@ -195,6 +210,11 @@ fits the required semantics.
   contains exactly `2N` quadruples and adds exactly `N` connector controls, so
   its control cardinality is `f+N` when the source control type has cardinality
   `f`.  These are component counts, not the full Table 1 counts.
+- **Selected and formalized in Stage 6:** the full constructed syntax has
+  exactly `2f+2N+4` controls and `4N+2z+3` rules, where `z` counts source
+  nonblank symbols plus blank.  Its three full tape alphabets have cardinalities
+  `(z,N+1,z)`.  These are constructor-cardinality theorems, independent of the
+  semantic simulation proof.
 - **Selected:** exact counts require finite, pairwise-disjoint constructors and
   explicit cardinality/freshness assumptions; semantic equivalence proves no
   numerical count by itself.
@@ -218,6 +238,11 @@ fits the required semantics.
   one successful blank-target copy, `n` backward steps, and history growth by
   `n`—but assigns no target-machine transition count to their `PEquiv`
   composition.  Concrete scheduler and Table 1 costs belong to Stages 6–7.
+- **Selected and formalized in Stage 6:** a standard source run of `v` steps
+  producing a word of length `λ` induces a concrete Table 1 run of exactly
+  `4v+4λ+5` quadruple transitions: `2v` forward, `4λ+5` copy, and `2v`
+  reverse.  Stage 7 separately derives visited/nonblank/active-cell formulas
+  from the displayed schedules.
 
 ## Build and Axiom Policy
 

@@ -48,8 +48,10 @@ excluded rather than silently weakened.
   transitive dependencies.
 - The paper's main construction uses read-write-shift quintuples for the source,
   read/write-or-shift quadruples for the reversible target, and three tapes.
-- The paper claims exact target counts `2f + 2N + 4` states,
-  `4N + 2z + 3` quadruples, and time `4v + 4λ + 5`; none is yet verified.
+- Stage 6 reconstructs the complete Table 1 syntax and proves the paper's exact
+  target counts `2f + 2N + 4` states, `4N + 2z + 3` quadruples, alphabet sizes
+  `(z,N+1,z)`, and run time `4v + 4λ + 5`.  Stage 7 still owns the separate
+  visited/nonblank/active-cell audit.
 - The complete PDF and both table images have been audited.  Table 1's state,
   rule, alphabet, and time arithmetic is internally correct under its atomic
   history-symbol/fresh-state conventions; its tape-1 space equality remains
@@ -73,6 +75,10 @@ excluded rather than silently weakened.
   of a source quintuple, and a fresh-state two-rule split.  Pure splitting is
   range-disjoint exactly when source rule targets are injective, so the Stage 6
   history write is an essential part of Bennett's general simulator.
+- Stage 6 exposes a globally domain/range-disjoint finite three-tape machine,
+  exact forward/copy/retrace schedules (including empty output), two-way halting
+  equivalence on accepted standard inputs, and a central certificate naming
+  every initial/final tape, head, and phase-tagged control state.
 
 ## Working Assumptions to Test
 
@@ -266,7 +272,7 @@ inspection” local argument with proofs.
 
 ### 6-THREE-TAPE — Bennett simulator and central semantic theorem
 
-**Status:** Pending.
+**Status:** In progress (mathematical core complete; final audit/example foldback).
 
 #### Big Picture Objective
 

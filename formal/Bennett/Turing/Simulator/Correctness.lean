@@ -292,6 +292,11 @@ structure SimulationCertificate [Fintype Symbol]
   finalControl :
     (finalConfiguration source normal.start input output).control =
       .reverse normal.start
+  logicalControlRestored :
+    Control.source?
+        (initialConfiguration source normal.start input).control =
+      Control.source?
+        (finalConfiguration source normal.start input output).control
   finalWork :
     (finalConfiguration source normal.start input output).tape .work =
       Tape.ofWord input
@@ -347,6 +352,7 @@ theorem central_correctness [Fintype Symbol]
       initialHistory := by simp
       initialOutput := by simp
       finalControl := by simp
+      logicalControlRestored := by simp
       finalWork := by simp
       finalHistory := by simp
       finalOutput := by simp

@@ -67,6 +67,15 @@ inductive Control (SourceControl RuleId : Type) where
   | reverseConnector (ruleId : RuleId)
 deriving DecidableEq, Repr
 
+/-- Forget the forward/reverse phase tag when a simulator control denotes an
+actual source control.  Connector and copy controls have no source-control
+projection. -/
+def Control.source? {SourceControl RuleId : Type} :
+    Control SourceControl RuleId → Option SourceControl
+  | .forward control => some control
+  | .reverse control => some control
+  | _ => none
+
 /-- Complete physical simulator configuration for one source machine. -/
 abbrev Configuration {SourceControl Symbol : Type}
     (source : Machine SourceControl Symbol) :=
@@ -307,6 +316,15 @@ def finalConfiguration (source : Machine SourceControl Symbol)
     (finalConfiguration source start input output).tape .output =
       Tape.ofWord output :=
   rfl
+
+/-- Cleanup restores the logical source control although the physical phase tag
+changes from forward to reverse. -/
+@[simp] theorem logicalControl_restored
+    (source : Machine SourceControl Symbol)
+    (start : SourceControl) (input output : List Symbol) :
+    Control.source? (initialConfiguration source start input).control =
+      Control.source? (finalConfiguration source start input output).control := by
+  simp [Control.source?]
 
 end Simulator
 end Bennett.Turing
