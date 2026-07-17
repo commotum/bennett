@@ -1,5 +1,6 @@
 import Bennett.Prelude
 import Mathlib.Data.Finsupp.Defs
+import Mathlib.Data.Fintype.Option
 
 /-!
 # Canonical two-way-infinite tapes
@@ -23,6 +24,26 @@ instance {Symbol : Type*} : Zero (TapeSymbol Symbol) :=
 
 @[simp] theorem TapeSymbol.zero_eq_blank {Symbol : Type*} :
     (0 : TapeSymbol Symbol) = .blank := rfl
+
+/-- `TapeSymbol` is definitionally one blank plus the nonblank alphabet. -/
+def TapeSymbol.equivOption {Symbol : Type*} :
+    TapeSymbol Symbol ≃ Option Symbol where
+  toFun
+    | .blank => none
+    | .mark symbol => some symbol
+  invFun
+    | none => .blank
+    | some symbol => .mark symbol
+  left_inv symbol := by cases symbol <;> rfl
+  right_inv symbol := by cases symbol <;> rfl
+
+instance {Symbol : Type*} [Fintype Symbol] : Fintype (TapeSymbol Symbol) :=
+  Fintype.ofEquiv (Option Symbol) TapeSymbol.equivOption.symm
+
+@[simp] theorem TapeSymbol.card {Symbol : Type*} [Fintype Symbol] :
+    Fintype.card (TapeSymbol Symbol) = Fintype.card Symbol + 1 := by
+  rw [Fintype.card_congr TapeSymbol.equivOption]
+  simp
 
 /-- The three source-machine head movements. -/
 inductive Move where
