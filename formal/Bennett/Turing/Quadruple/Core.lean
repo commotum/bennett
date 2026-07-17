@@ -105,80 +105,100 @@ def execute (action : Action Symbol) (tape : Tape Symbol) : Tape Symbol :=
 
 end Action
 
-/-- A complete configuration of an intrinsic finite number of tapes. -/
-structure MultiConfiguration (TapeCount : Nat) (Control Symbol : Type*) where
+/-- A control state together with heterogeneous tapes indexed by `TapeIndex`. -/
+structure MultiConfiguration (Control TapeIndex : Type*)
+    (Symbol : TapeIndex → Type*) where
   control : Control
-  tapes : Fin TapeCount → Tape Symbol
+  tape : (index : TapeIndex) → Tape (Symbol index)
 
 namespace MultiConfiguration
 
-variable {TapeCount : Nat} {Control Symbol : Type*}
+variable {Control TapeIndex : Type*} {Symbol : TapeIndex → Type*}
+
+@[ext] theorem ext
+    {first second : MultiConfiguration Control TapeIndex Symbol}
+    (hcontrol : first.control = second.control)
+    (htape : ∀ index, first.tape index = second.tape index) :
+    first = second := by
+  cases first with
+  | mk firstControl firstTape =>
+      cases second with
+      | mk secondControl secondTape =>
+          simp only at hcontrol htape
+          subst secondControl
+          congr
+          funext index
+          exact htape index
 
 /-- The symbol scanned on a selected tape. -/
-def read (config : MultiConfiguration TapeCount Control Symbol)
-    (index : Fin TapeCount) : TapeSymbol Symbol :=
-  (config.tapes index).read
+def read (config : MultiConfiguration Control TapeIndex Symbol)
+    (index : TapeIndex) : TapeSymbol (Symbol index) :=
+  (config.tape index).read
 
 end MultiConfiguration
 
 /-- A multi-tape read/write-or-move transition. -/
-structure Quadruple (TapeCount : Nat) (Control Symbol : Type*) where
+structure Quadruple (Control TapeIndex : Type*) (Symbol : TapeIndex → Type*) where
   source : Control
-  actions : Fin TapeCount → Action Symbol
+  action : (index : TapeIndex) → Action (Symbol index)
   target : Control
 
 namespace Quadruple
 
-variable {TapeCount : Nat} {Control Symbol : Type*}
+variable {Control TapeIndex : Type*} {Symbol : TapeIndex → Type*}
 
 /-- A quadruple matches its source control and every action precondition. -/
-def Matches (rule : Quadruple TapeCount Control Symbol)
-    (config : MultiConfiguration TapeCount Control Symbol) : Prop :=
+def Matches (rule : Quadruple Control TapeIndex Symbol)
+    (config : MultiConfiguration Control TapeIndex Symbol) : Prop :=
   rule.source = config.control ∧
-    ∀ index, (rule.actions index).Matches (config.tapes index)
+    ∀ index, (rule.action index).Matches (config.tape index)
 
-instance [DecidableEq Control] [DecidableEq Symbol]
-    (rule : Quadruple TapeCount Control Symbol)
-    (config : MultiConfiguration TapeCount Control Symbol) :
+instance [DecidableEq Control] [Fintype TapeIndex]
+    [∀ index, DecidableEq (Symbol index)]
+    (rule : Quadruple Control TapeIndex Symbol)
+    (config : MultiConfiguration Control TapeIndex Symbol) :
     Decidable (rule.Matches config) := by
   unfold Matches
   infer_instance
 
 /-- Execute all tape actions simultaneously, then install the target control. -/
-def execute (rule : Quadruple TapeCount Control Symbol)
-    (config : MultiConfiguration TapeCount Control Symbol) :
-    MultiConfiguration TapeCount Control Symbol :=
+def execute (rule : Quadruple Control TapeIndex Symbol)
+    (config : MultiConfiguration Control TapeIndex Symbol) :
+    MultiConfiguration Control TapeIndex Symbol :=
   { control := rule.target
-    tapes := fun index => (rule.actions index).execute (config.tapes index) }
+    tape := fun index => (rule.action index).execute (config.tape index) }
 
-@[simp] theorem execute_control (rule : Quadruple TapeCount Control Symbol)
-    (config : MultiConfiguration TapeCount Control Symbol) :
+@[simp] theorem execute_control (rule : Quadruple Control TapeIndex Symbol)
+    (config : MultiConfiguration Control TapeIndex Symbol) :
     (rule.execute config).control = rule.target :=
   rfl
 
-@[simp] theorem execute_tapes (rule : Quadruple TapeCount Control Symbol)
-    (config : MultiConfiguration TapeCount Control Symbol)
-    (index : Fin TapeCount) :
-    (rule.execute config).tapes index =
-      (rule.actions index).execute (config.tapes index) :=
+@[simp] theorem execute_tape (rule : Quadruple Control TapeIndex Symbol)
+    (config : MultiConfiguration Control TapeIndex Symbol)
+    (index : TapeIndex) :
+    (rule.execute config).tape index =
+      (rule.action index).execute (config.tape index) :=
   rfl
 
 /-- The partial transition induced by a single quadruple. -/
-def step [DecidableEq Control] [DecidableEq Symbol]
-    (rule : Quadruple TapeCount Control Symbol) :
-    PartialStep (MultiConfiguration TapeCount Control Symbol) :=
+def step [DecidableEq Control] [Fintype TapeIndex]
+    [∀ index, DecidableEq (Symbol index)]
+    (rule : Quadruple Control TapeIndex Symbol) :
+    PartialStep (MultiConfiguration Control TapeIndex Symbol) :=
   fun config => if rule.Matches config then some (rule.execute config) else none
 
-theorem step_eq_some_iff [DecidableEq Control] [DecidableEq Symbol]
-    (rule : Quadruple TapeCount Control Symbol)
-    (before after : MultiConfiguration TapeCount Control Symbol) :
+theorem step_eq_some_iff [DecidableEq Control] [Fintype TapeIndex]
+    [∀ index, DecidableEq (Symbol index)]
+    (rule : Quadruple Control TapeIndex Symbol)
+    (before after : MultiConfiguration Control TapeIndex Symbol) :
     rule.step before = some after ↔
       rule.Matches before ∧ rule.execute before = after := by
   simp [step]
 
-theorem step_eq_none_iff [DecidableEq Control] [DecidableEq Symbol]
-    (rule : Quadruple TapeCount Control Symbol)
-    (config : MultiConfiguration TapeCount Control Symbol) :
+theorem step_eq_none_iff [DecidableEq Control] [Fintype TapeIndex]
+    [∀ index, DecidableEq (Symbol index)]
+    (rule : Quadruple Control TapeIndex Symbol)
+    (config : MultiConfiguration Control TapeIndex Symbol) :
     rule.step config = none ↔ ¬rule.Matches config := by
   simp [step]
 
