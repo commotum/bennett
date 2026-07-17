@@ -64,6 +64,15 @@ fits the required semantics.
   inverse laws.  It assumes no compactness of records.  Its lifted steps form a
   mathlib `PEquiv`, add exactly one list entry per source step, reject malformed
   records, and reverse any finite generated run exactly.
+- **Selected and formalized in Stage 3:** `computeCopyUncompute` is a semantic
+  `PEquiv` macro indexed by an externally supplied exact source-step count `n`.
+  It performs recorded computation, checks that the endpoint is halted, copies
+  an observation onto a blank register, and reverses exactly `n` recorded steps.
+  It is not an autonomous phase scheduler or an executable halting search.
+- **Selected:** exact bounded reversal preserves an arbitrary initial history
+  suffix.  A future autonomous scheduler instead needs an empty/bounded history,
+  a baseline marker, or an independently proved backward-halting boundary so it
+  does not continue into that suffix.
 
 ## Copying
 
@@ -72,7 +81,13 @@ fits the required semantics.
   justify copying arbitrary configurations.
 - **Selected:** destructive overwrite is not a reversible copy operation.  Copy
   theorems expose blankness/equality invariants in their preconditions.
-- **Owned by Stage 3:** the abstract target state and partial inverse interface.
+- **Selected and formalized in Stage 3:** `blankEquiv` has forward domain
+  `(value, blank)` and inverse domain `(value, value)`;
+  `observedEquiv` retains arbitrary work and copies only an observation.  The
+  exact domain/equality laws and destructive-overwrite no-go results are proved.
+- **Selected and formalized in Stage 3:** any globally reversible output-only
+  realization from a fixed blank ancilla computes an injective function.  Thus a
+  noninjective computation must retain the input or equivalent recovery data.
 - **Owned by Stages 4 and 6:** the exact standard-tape copy loop and its head
   positions before and after copying.
 
@@ -112,6 +127,10 @@ fits the required semantics.
 - **Selected:** the fact that each stage is reversible does not alone make their
   union reversible.  Phase tags and cross-stage domain/range disjointness are
   explicit proof obligations.
+- **Selected and formalized in Stage 3 at the macro level:** sequential
+  `PEquiv.trans` composition is itself a partial equivalence.  This proves
+  injectivity of the entry-to-exit semantic macro, not determinism or
+  reversibility of a union of concrete one-step phase rules.
 - **Owned by Stage 6:** whether the final concrete theorem proves global
   non-overlap on every syntactic configuration or a weaker reachable invariant.
   The paper intends global rule-domain/range non-overlap, so that is the target.
@@ -125,6 +144,10 @@ fits the required semantics.
 - **Selected:** initial and final configurations specify every tape, head, and
   control state.  The informal judgment `R : (I;B;B) → (I;B;P)` is only a
   documented abbreviation after this stronger result exists.
+- **Selected and formalized in Stage 3:** for fixed `n` and a blank target, the
+  semantic macro succeeds iff the source `HaltsIn n`; existence of some
+  successful `n` is equivalent to `Terminates`.  This existential theorem is a
+  logical equivalence, not a decision procedure for termination.
 
 ## Resource Accounting
 
@@ -148,6 +171,10 @@ fits the required semantics.
   suggesting visited cells including endpoint blanks, but does not define `s`.
 - **Selected:** asymptotic claims and exact equalities are separate results.
   Ignored dump-I/O time is an explicit assumption, never silently omitted.
+- **Selected:** Stage 3 proves exact component facts—`n` recorded forward steps,
+  one successful blank-target copy, `n` backward steps, and history growth by
+  `n`—but assigns no target-machine transition count to their `PEquiv`
+  composition.  Concrete scheduler and Table 1 costs belong to Stages 6–7.
 
 ## Build and Axiom Policy
 

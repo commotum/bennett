@@ -11,7 +11,27 @@ copies only a classical observation of it.
 
 namespace Bennett.Copy
 
-variable {β Work : Type*}
+variable {α β Work : Type*}
+
+/--
+An output-only reversible realization from a fixed blank ancilla can compute
+only an injective function.  Noninjective functions therefore must retain input
+or some equivalent recovery information in their successful output state.
+-/
+theorem injective_of_reversible_outputOnly
+    (transition : PartialStep (α × β)) (hrev : transition.Reversible)
+    (blank : β) (erased : α) (compute : α → β)
+    (hrealizes : ∀ input,
+      transition (input, blank) = some (erased, compute input)) :
+    Function.Injective compute := by
+  intro input₁ input₂ houtput
+  have hsecond :
+      transition (input₂, blank) = some (erased, compute input₁) := by
+    simpa [houtput] using hrealizes input₂
+  have hpairs : (input₁, blank) = (input₂, blank) :=
+    (PartialStep.reversible_iff transition).mp hrev
+      (hrealizes input₁) hsecond
+  exact congrArg Prod.fst hpairs
 
 /-- Copy a value onto a target only when the target is the distinguished blank. -/
 def blankForward [DecidableEq β] (blank : β) : PartialStep (β × β)

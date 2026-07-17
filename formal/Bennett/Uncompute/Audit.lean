@@ -14,7 +14,7 @@ Nothing in this file is re-exported by the public API.
 
 namespace Bennett.UncomputeAudit
 
-open HistoryAudit
+open HistoryAudit Uncompute
 
 def terminalObservation (state : List Bool) : Bool := state.isEmpty
 
@@ -46,6 +46,7 @@ end Bennett.UncomputeAudit
 
 #print axioms Bennett.Copy.blankEquiv
 #print axioms Bennett.Copy.observedEquiv
+#print axioms Bennett.Copy.injective_of_reversible_outputOnly
 #print axioms Bennett.CopyAudit.overwriteStep_not_reversible
 #print axioms Bennett.Uncompute.computeCopyUncompute_apply_of_run_halted
 #print axioms Bennett.Uncompute.computeCopyUncompute_eq_some_iff
