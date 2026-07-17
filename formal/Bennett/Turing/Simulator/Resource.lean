@@ -107,6 +107,22 @@ theorem Scheduled.forall_executionTrace
           exact hstep tailRule before (by simp [hmem])
         · exact htail
 
+/-- The endpoint of a matching schedule occurs in its concrete state trace. -/
+theorem Scheduled.finish_mem_executionTrace
+    {rules : List (Quadruple Control TapeIndex Symbol)}
+    {start finish : MultiConfiguration Control TapeIndex Symbol}
+    (hscheduled : Scheduled rules start finish) :
+    finish ∈ (executionTrace rules start).states := by
+  induction rules generalizing start with
+  | nil =>
+      simp only [Scheduled] at hscheduled
+      subst finish
+      simp
+  | cons rule rules ih =>
+      simp only [Scheduled] at hscheduled
+      rw [executionTrace_states_cons]
+      exact List.mem_cons_of_mem _ (ih hscheduled.2)
+
 end Quadruple
 
 namespace Simulator.Copy.Resource
@@ -481,6 +497,120 @@ def copyTrace {source : Machine SourceControl Symbol}
     (configuration source (.forward normal.finish)
       (Tape.ofWord word) history (Tape.blankAt (-1)))
 
+/-- A one-record history satisfying the copy schedule's junction check. -/
+def referenceHistory {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source) : Tape source.RuleId :=
+  HistoryTape.encode [normal.exitId]
+
+@[simp] theorem referenceHistory_read
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source) :
+    (referenceHistory normal).read = .mark normal.exitId := by
+  simp [referenceHistory]
+
+/-- The copy data tapes do not depend on the supplied history contents. -/
+theorem copyTrace_work_tapes_eq
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (first second : Tape source.RuleId) (word : List Symbol) :
+    (copyTrace normal first word).states.map (fun state => state.tape .work) =
+      (copyTrace normal second word).states.map
+        (fun state => state.tape .work) := by
+  unfold copyTrace
+  apply Quadruple.executionTrace_tapes_eq
+  rfl
+
+theorem copyTrace_output_tapes_eq
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (first second : Tape source.RuleId) (word : List Symbol) :
+    (copyTrace normal first word).states.map (fun state => state.tape .output) =
+      (copyTrace normal second word).states.map
+        (fun state => state.tape .output) := by
+  unfold copyTrace
+  apply Quadruple.executionTrace_tapes_eq
+  rfl
+
+theorem referenceTrace_dataInvariant
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source) (word : List Symbol) :
+    ∀ state ∈ (copyTrace normal (referenceHistory normal) word).states,
+      DataInvariant word state := by
+  have hscheduled := scheduled normal (referenceHistory normal)
+    (referenceHistory_read normal) word
+  unfold copyTrace
+  apply Quadruple.Scheduled.forall_executionTrace
+    (predicate := DataInvariant word) hscheduled
+  · constructor
+    · rfl
+    · rfl
+    · simp [Tape.nonblankPositions]
+  · intro displayed before hmem hmatch hinvariant
+    change displayed ∈ (ids word).map (rule normal) at hmem
+    obtain ⟨ruleId, _, rfl⟩ := List.mem_map.mp hmem
+    exact hinvariant.execute normal word ruleId before hmatch
+
+theorem copyTrace_work_cells_of_mem
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (history : Tape source.RuleId) (word : List Symbol)
+    {state : Simulator.Configuration source}
+    (hstate : state ∈ (copyTrace normal history word).states) :
+    (state.tape .work).cells = (Tape.ofWord word).cells := by
+  have htape : state.tape .work ∈
+      (copyTrace normal history word).states.map
+        (fun current => current.tape .work) :=
+    List.mem_map.mpr ⟨state, hstate, rfl⟩
+  rw [copyTrace_work_tapes_eq normal history (referenceHistory normal) word]
+    at htape
+  obtain ⟨reference, hreference, heq⟩ := List.mem_map.mp htape
+  rw [← heq]
+  exact (referenceTrace_dataInvariant normal word
+    reference hreference).workCells
+
+theorem copyTrace_output_support_of_mem
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (history : Tape source.RuleId) (word : List Symbol)
+    {state : Simulator.Configuration source}
+    (hstate : state ∈ (copyTrace normal history word).states) :
+    (state.tape .output).nonblankPositions ⊆
+      (Tape.ofWord word).nonblankPositions := by
+  have htape : state.tape .output ∈
+      (copyTrace normal history word).states.map
+        (fun current => current.tape .output) :=
+    List.mem_map.mpr ⟨state, hstate, rfl⟩
+  rw [copyTrace_output_tapes_eq normal history
+    (referenceHistory normal) word] at htape
+  obtain ⟨reference, hreference, heq⟩ := List.mem_map.mp htape
+  rw [← heq]
+  exact (referenceTrace_dataInvariant normal word
+    reference hreference).outputSupport
+
+/-- Some state of every copy trace contains the complete copied output. -/
+theorem copyTrace_output_full_mem
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (history : Tape source.RuleId) (word : List Symbol) :
+    Tape.ofWord word ∈
+      (copyTrace normal history word).states.map
+        (fun state => state.tape .output) := by
+  have hscheduled := scheduled normal (referenceHistory normal)
+    (referenceHistory_read normal) word
+  have hfinal := Quadruple.Scheduled.finish_mem_executionTrace hscheduled
+  have hreference : Tape.ofWord word ∈
+      (copyTrace normal (referenceHistory normal) word).states.map
+      (fun state => state.tape .output) := by
+    exact List.mem_map.mpr ⟨_, hfinal, rfl⟩
+  have heq :
+      (copyTrace normal history word).states.map
+          (fun state => (state.tape .output : Tape Symbol)) =
+        (copyTrace normal (referenceHistory normal) word).states.map
+          (fun state => (state.tape .output : Tape Symbol)) :=
+    copyTrace_output_tapes_eq normal history (referenceHistory normal) word
+  rw [heq]
+  exact hreference
+
 /-- Exact work-head sequence of the concrete copy trace. -/
 theorem copyTrace_work_heads
     {source : Machine SourceControl Symbol}
@@ -601,6 +731,146 @@ theorem copyTrace_history_visitedPositions
       (copyTrace normal history word)).card = 1 := by
   rw [copyTrace_history_visitedPositions]
   simp
+
+theorem copyTrace_work_nonblankPositions_of_mem
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (history : Tape source.RuleId) (word : List Symbol)
+    {state : Simulator.Configuration source}
+    (hstate : state ∈ (copyTrace normal history word).states) :
+    (state.tape .work).nonblankPositions =
+      Finset.Ico 0 (word.length : Int) := by
+  change (state.tape .work).cells.support = _
+  rw [copyTrace_work_cells_of_mem normal history word hstate]
+  exact Tape.ofWord_nonblankPositions word
+
+theorem copyTrace_output_nonblankPositions_subset_of_mem
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (history : Tape source.RuleId) (word : List Symbol)
+    {state : Simulator.Configuration source}
+    (hstate : state ∈ (copyTrace normal history word).states) :
+    (state.tape .output).nonblankPositions ⊆
+      Finset.Ico 0 (word.length : Int) := by
+  rw [← Tape.ofWord_nonblankPositions word]
+  exact copyTrace_output_support_of_mem normal history word hstate
+
+private theorem mem_foldl_union_nonblank
+    {State α : Type*} (states : List State) (tape : State → Tape α)
+    (initial : Finset Int) (position : Int) :
+    position ∈ states.foldl
+        (fun positions state =>
+          positions ∪ (tape state).nonblankPositions) initial ↔
+      position ∈ initial ∨
+        ∃ state ∈ states, position ∈ (tape state).nonblankPositions := by
+  induction states generalizing initial with
+  | nil => simp
+  | cons state states ih =>
+      rw [List.foldl_cons, ih]
+      simp only [Finset.mem_union, List.mem_cons]
+      aesop
+
+theorem copyTrace_work_everNonblankPositions
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (history : Tape source.RuleId) (word : List Symbol) :
+    ExecutionTrace.everNonblankPositions
+        (fun state : Simulator.Configuration source => state.tape .work)
+        (copyTrace normal history word) =
+      Finset.Ico 0 (word.length : Int) := by
+  ext position
+  unfold ExecutionTrace.everNonblankPositions
+  rw [mem_foldl_union_nonblank]
+  simp only [Finset.notMem_empty, false_or, Finset.mem_Ico]
+  constructor
+  · rintro ⟨state, hstate, hposition⟩
+    rw [copyTrace_work_nonblankPositions_of_mem
+      normal history word hstate] at hposition
+    simpa only [Finset.mem_Ico] using hposition
+  · intro hposition
+    refine ⟨(copyTrace normal history word).initial, ?_, ?_⟩
+    · simp [ExecutionTrace.states]
+    · rw [copyTrace_work_nonblankPositions_of_mem normal history word
+        (by simp [ExecutionTrace.states])]
+      simpa only [Finset.mem_Ico] using hposition
+
+theorem copyTrace_output_everNonblankPositions
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (history : Tape source.RuleId) (word : List Symbol) :
+    ExecutionTrace.everNonblankPositions
+        (fun state : Simulator.Configuration source => state.tape .output)
+        (copyTrace normal history word) =
+      Finset.Ico 0 (word.length : Int) := by
+  ext position
+  unfold ExecutionTrace.everNonblankPositions
+  rw [mem_foldl_union_nonblank]
+  simp only [Finset.notMem_empty, false_or, Finset.mem_Ico]
+  constructor
+  · rintro ⟨state, hstate, hposition⟩
+    simpa only [Finset.mem_Ico] using
+      copyTrace_output_nonblankPositions_subset_of_mem
+        normal history word hstate hposition
+  · intro hposition
+    obtain ⟨state, hstate, htape⟩ :=
+      List.mem_map.mp (copyTrace_output_full_mem normal history word)
+    refine ⟨state, hstate, ?_⟩
+    rw [htape]
+    change position ∈ (Tape.ofWord word : Tape Symbol).nonblankPositions
+    rw [Tape.ofWord_nonblankPositions]
+    simpa only [Finset.mem_Ico] using hposition
+
+theorem copyTrace_work_footprintPositions
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (history : Tape source.RuleId) (word : List Symbol) :
+    ExecutionTrace.footprintPositions
+        (fun state : Simulator.Configuration source => state.tape .work)
+        (copyTrace normal history word) =
+      Tape.delimiterTraversal word := by
+  rw [ExecutionTrace.footprintPositions,
+    copyTrace_work_visitedPositions,
+    copyTrace_work_everNonblankPositions]
+  apply Finset.union_eq_left.mpr
+  intro position hposition
+  simp [Tape.delimiterTraversal] at hposition ⊢
+  omega
+
+theorem copyTrace_output_footprintPositions
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (history : Tape source.RuleId) (word : List Symbol) :
+    ExecutionTrace.footprintPositions
+        (fun state : Simulator.Configuration source => state.tape .output)
+        (copyTrace normal history word) =
+      Tape.delimiterTraversal word := by
+  rw [ExecutionTrace.footprintPositions,
+    copyTrace_output_visitedPositions,
+    copyTrace_output_everNonblankPositions]
+  apply Finset.union_eq_left.mpr
+  intro position hposition
+  simp [Tape.delimiterTraversal] at hposition ⊢
+  omega
+
+@[simp] theorem copyTrace_work_footprintCard
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (history : Tape source.RuleId) (word : List Symbol) :
+    (ExecutionTrace.footprintPositions
+      (fun state : Simulator.Configuration source => state.tape .work)
+      (copyTrace normal history word)).card = word.length + 2 := by
+  rw [copyTrace_work_footprintPositions]
+  exact Tape.delimiterTraversal_card word
+
+@[simp] theorem copyTrace_output_footprintCard
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (history : Tape source.RuleId) (word : List Symbol) :
+    (ExecutionTrace.footprintPositions
+      (fun state : Simulator.Configuration source => state.tape .output)
+      (copyTrace normal history word)).card = word.length + 2 := by
+  rw [copyTrace_output_footprintPositions]
+  exact Tape.delimiterTraversal_card word
 
 end Simulator.Copy.Resource
 
