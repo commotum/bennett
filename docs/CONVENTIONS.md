@@ -26,6 +26,10 @@ fits the required semantics.
   means at most one predecessor.  Neither property implies the other.
 - **Selected:** a transition rule may be individually injective while a set of
   rules fails to be reversible because their ranges overlap.
+- **Selected:** pairwise domain/range non-overlap is Bennett's syntactic
+  unique-rule discipline.  It implies the corresponding semantic properties,
+  but is stronger than extensional uniqueness when overlapping rules happen to
+  compute the same successor/predecessor.
 - **Selected:** global injectivity and injectivity restricted to a well-formed or
   reachable set are separate predicates and may not be substituted silently.
 - **Owned by Stage 2:** the concrete Lean carrier for partial steps.  The leading
@@ -41,9 +45,12 @@ fits the required semantics.
 - **Selected:** a history entry must carry proved predecessor-recovery data.  A
   bare state snapshot or rule index is accepted only after an inverse law is
   proved for the relevant model.
-- **Selected:** reverse execution must restore the entire modeled work state,
-  including control state, tape contents, head positions, and history, not merely
-  the observable input string.
+- **Selected:** an abstract reverse execution theorem restores its entire modeled
+  work state, including control, tapes, heads, and history.  In the literal
+  Table 1 machine, however, control changes from initial `A₁` to final `C₁`;
+  exact restoration therefore applies to tapes/heads and to control only after
+  an explicit phase-forgetting `A↔C` projection.  Both concrete states must be
+  named in the central theorem.
 - **Selected:** compute-copy-uncompute retains the original input unless an
   independently reversible recovery procedure is supplied.
 
@@ -91,6 +98,9 @@ fits the required semantics.
 - **Selected:** the third stage uses the inverse actions in reverse trace order;
   replacing `A` labels by `C` labels is only the syntactic control-state part of
   that construction.
+- **Selected:** the fact that each stage is reversible does not alone make their
+  union reversible.  Phase tags and cross-stage domain/range disjointness are
+  explicit proof obligations.
 - **Owned by Stage 6:** whether the final concrete theorem proves global
   non-overlap on every syntactic configuration or a weaker reachable invariant.
   The paper intends global rule-domain/range non-overlap, so that is the target.
@@ -117,6 +127,9 @@ fits the required semantics.
 - **Selected:** exact counts require finite, pairwise-disjoint constructors and
   explicit cardinality/freshness assumptions; semantic equivalence proves no
   numerical count by itself.
+- **Selected:** the claimed history alphabet cardinality `N+1` treats each of
+  the `N` rule identifiers as one atomic symbol disjoint from blank.  A fixed
+  alphabet encoding would change history space, transition counts, and time.
 - **Owned by Stage 4:** primary `usedCells` and `visitedCells` definitions.
 - **Owned by Stage 7:** whether tape 1's paper parameter `s` counts the initial
   head-scanned blank, and exact endpoint-blank conventions for all three tapes.

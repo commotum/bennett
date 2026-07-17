@@ -86,10 +86,14 @@ it does not license silently using the proposed repair.
   nonblank cells, span, or simultaneous allocation.  `v+1` counts `v` history
   records plus an endpoint/initial cell, and `λ+2` evidently counts both
   bounding blanks; it is unclear whether the source parameter `s` follows the
-  same endpoint convention.
+  same endpoint convention.  Under ordinary distinct-scanned-cell accounting,
+  the copy sweep scans the blank immediately right of the output even when the
+  source computation never scanned it, so tape 1 can use `s+1` cells.
 - **Corrected formulation:** prove separate visited-cell and occupied/nonblank
-  statements with head/endpoint conventions explicit, then identify the one
-  matching each paper number.
+  statements with head/endpoint conventions explicit.  The robust tape-1
+  footprint is the union of the source-run footprint and the copy traversal of
+  the final standard output; an exact `s` follows only if `s` already includes
+  that traversal (in particular the right delimiter).
 - **Justification:** the measures differ on blank cells even for Table 1's trace.
 - **Consequences:** no exact space theorem is inferred from semantic simulation;
   Stage 4 defines measures and Stage 7 audits the formulas.
@@ -118,8 +122,12 @@ it does not license silently using the proposed repair.
   the time, ignoring restart-dump I/O.
 - **Issue:** segment count is a positive integer; `v` may not divide evenly;
   dumps may number `n-1` rather than `n`; segment lengths may differ; and dump
-  read/write time is explicitly omitted.  The earlier strict inequality and the
-  later equality cannot both describe the same unrounded expression uniformly.
+  read/write time is explicitly omitted.  A restart dump must encode tape,
+  control, head, and phase, not merely `s` tape symbols.  The optimized expression
+  concerns temporary history-plus-dump storage, while the theorem preview calls
+  it total space; permanent input/output and working space are additional.  The
+  earlier strict inequality and later equality cannot both describe the same
+  unrounded expression uniformly.
 - **Corrected formulation:** first define an exact integer cost such as
   `ceil(v/n) + (n-1)s` (or the construction-derived alternative), prove a bound
   for an explicitly rounded `n`, and state dump-I/O assumptions in the time
@@ -135,16 +143,76 @@ it does not license silently using the proposed repair.
 - **Location:** journal pp. 526–528, lines 49, 96, 205.
 - **Original claim:** a machine is reversible iff its rule ranges do not overlap.
 - **Issue:** the statement moves between a syntactic finite rule set, the union
-  transition relation, and standard reachable computations.  The iff relies on
-  each rule being an injective partial map and on the exact meaning of distinct
-  rules/range overlap; restricted reachability can be reversible even when
-  unreachable syntactic ranges overlap.
+  transition relation, and standard reachable computations.  Pairwise
+  non-overlap is not necessary for extensional semantic uniqueness when two
+  applicable rules agree.  For example, on one tape
+  `A[/]→[0]B` and `A[x]→[x]B` overlap when `x` is scanned but produce the
+  same successor there; their union remains a partial function and injection.
+  Restricted reachability can also be reversible despite unreachable syntactic
+  range overlaps.
 - **Corrected formulation:** define global semantic predecessor uniqueness,
   set-restricted predecessor uniqueness, and syntactic pairwise range
-  disjointness separately.  Prove the sufficient implication, and prove a
-  converse only with the hypotheses it actually needs.
+  disjointness separately.  Prove syntactic non-overlap as a sufficient
+  unique-rule discipline, not an unconditional extensional iff.  A converse
+  requires rule-separation assumptions or a definition of determinism as unique
+  applicable rule rather than unique successor.
 - **Justification:** this preserves the paper's intended global construction
   while making later reachable-input theorems honest.
 - **Consequences:** Stages 2 and 5 own distinct APIs; Stage 6 reports both global
   constructed-machine properties and standard-run correctness where proved.
 - **Status:** Open (Stages 2, 5, and 6).
+
+## C-009 — Table 1 does not restore the literal whole-machine state
+
+- **Location:** abstract and journal p. 526 cleanup prose; Table 1 pp. 528–529.
+- **Original claim:** retracing restores the machine to its original condition,
+  apart from the copied output tape.
+- **Issue:** the paper itself defines a whole-machine state to include control.
+  Table 1 begins in `A₁` and terminates in the distinct state `C₁`.  Its tapes
+  and heads are restored as claimed, but the literal full configurations differ.
+- **Corrected formulation:** the concrete theorem names `A₁` initially and
+  `C₁` finally and proves exact tape/head/history cleanup.  A separate
+  phase-forgetting projection maps the `A` and `C` copies to one logical source
+  control state and is restored exactly.  The abstract history theorem may use
+  a single control carrier and prove literal restoration.
+- **Justification:** direct reading of Table 1 and its caption.
+- **Consequences:** the central theorem cannot assert raw initial/final
+  configuration equality; control-phase renaming remains observable in the
+  syntactic machine and in exact state counts.
+- **Status:** Open (Stages 2 and 6).
+
+## C-010 — Reversible stages do not automatically form a reversible union
+
+- **Location:** journal p. 526, line 32; Table 1 non-overlap argument p. 529.
+- **Original claim:** the complete computation is reversible and deterministic
+  because each of its stages is.
+- **Issue:** unions/compositions of individually reversible partial rule families
+  can acquire overlapping domains or ranges at their junctions.
+- **Corrected formulation:** an abstract staged construction uses disjoint phase
+  tags or explicit cross-stage domain/range hypotheses.  The concrete Table 1
+  proof checks the `A_f→B` and `B→C_f` bridges against every stage family.
+- **Justification:** injectivity is not preserved by an unqualified union of
+  partial injections.
+- **Consequences:** Stage 3 exposes composition premises; Stage 6 proves boundary
+  separation rather than citing per-stage reversibility alone.
+- **Status:** Open.
+
+## C-011 — Extensional “only if” inverse tests need nondegeneracy
+
+- **Location:** journal p. 527, quadruple property 1 after equations (5)–(6).
+- **Original claim:** the displayed syntactic swap/negation conditions hold iff
+  two quadruples define inverse partial maps.
+- **Issue:** the construction is uniformly sufficient, but an extensional
+  necessity claim can have degenerate exceptions.  On a singleton alphabet, for
+  example, read/write identity and null shift can be extensionally indistinguishable
+  on tape data despite different syntax.  A one-sided tape boundary would also
+  change shift domains/ranges.
+- **Corrected formulation:** use two-way-infinite tapes and prove the typed
+  syntactic inverse construction unconditionally.  State a characterization iff
+  only after adding the tape/alphabet richness and rule-observability assumptions
+  needed for necessity.
+- **Justification:** equality of partial maps need not imply equality of their
+  syntax without a separating configuration universe.
+- **Consequences:** Stage 5 prioritizes constructive inverse laws; no unqualified
+  necessity theorem is required by the simulator.
+- **Status:** Open (Stage 5).

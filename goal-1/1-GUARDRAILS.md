@@ -2,22 +2,26 @@
 
 ## Current Facts
 
-- The repository has the paper in Markdown/PDF form and a generic
-  `BUILD-PLAN.md`, but no Lean project.
-- No earlier `goal-*` folder existed, so this is `goal-1`.
-- The host reports Lean 4.31.0 and Lake 5.0.0.
-- Table 1 and Table 2 are images in the Markdown edition; exact syntax must be
-  inspected from those images or the PDF before reconstruction.
+- The source, PDF, Table 1, and Table 2 have now been inspected completely.
+- The repository has a minimal compiling `formal/` project pinned to Lean 4.31.0
+  and the matching mathlib release commit.
+- The full resolved dependency graph is recorded in `formal/lake-manifest.json`.
 - The formal core starts with semantics and guardrails, not the paper's physical
   discussion or segmented-history speculation.
+- Source claims, table syntax, corrections, exclusions, and open obligations are
+  indexed in `docs/TRACEABILITY.md` and `docs/CORRECTIONS.md`.
 
 ## Updated Assumptions
 
-- A `formal/` Lake project will isolate the Lean build from source documents.
-- The toolchain should be pinned to an exact official release compatible with a
-  pinned mathlib revision; availability must be checked before selecting it.
-- Initial modules can remain narrow and foundational while table reconstruction
-  is documented separately.
+- `Config → Option Config` remains the leading runtime partial-step candidate,
+  but Stage 2 must compare it against mathlib `PFun`; the Stage 1 import does not
+  preselect either representation.
+- Two-way-infinite tapes are needed for Bennett's stated shift domains/ranges;
+  the concrete executable representation remains owned by Stage 4.
+- Syntactic pairwise rule non-overlap must be kept separate from extensional
+  semantic determinism and injectivity.
+- Literal Table 1 control is not restored (`A₁` becomes `C₁`), so later
+  cleanup theorems require both exact concrete endpoints and a phase projection.
 
 ## Big Picture Objective
 
@@ -67,5 +71,38 @@ audit that fixes the semantic boundaries for later proof stages.
 
 ## Stage Results
 
-- In progress.
-
+- **Project created:** `formal/lean-toolchain`, `formal/lakefile.toml`, the fully
+  resolved `formal/lake-manifest.json`, `formal/Bennett/Prelude.lean`, the thin
+  `formal/Bennett.lean` root, and `formal/README.md`.
+- **Exact pins:** Lean `leanprover/lean4:v4.31.0`, commit
+  `68218e876d2a38b1985b8590fff244a83c321783`; mathlib
+  `fabf563a7c95a166b8d7b6efca11c8b4dc9d911f`.  All nine dependency checkout
+  revisions agree with the committed manifest.
+- **Documentation created:** `docs/CONVENTIONS.md` fixes scope/model boundaries;
+  `docs/TRACEABILITY.md` inventories the formal claims and transcribes both
+  tables; `docs/CORRECTIONS.md` records eleven initial corrections/ambiguities
+  with consequences and owning stages.
+- **Source findings:** the PDF's range-overlap formula is well-typed but the
+  Markdown conversion is not; non-overlap is stronger than extensional semantic
+  uniqueness; `A₁`/`C₁` prevent literal full-state restoration; the exact
+  state/rule/time arithmetic checks out; space and checkpoint claims need
+  corrected cost models.
+- **Dependency resolution:** the first sandboxed `lake update` failed only at DNS
+  resolution.  Re-running with scoped network authorization fetched the exact
+  pins and completed mathlib's cache hook successfully.
+- **Build correction:** the first build exposed that Lean 4.31 requires imports
+  before module documentation comments.  Moving the two imports fixed the only
+  code error.
+- **Focused build:** `cd formal && lake build Bennett.Prelude` succeeded with
+  398 jobs and built the leaf in 937 ms.
+- **Adjacent root build:** `cd formal && lake build Bennett` succeeded with 400
+  jobs and built the root in 1.1 s.
+- **Full default build:** `cd formal && lake build` succeeded with 400 jobs.
+- **Audits:** the completed Lean files have no `sorry`, `admit`, `axiom`, or
+  physical-model terms; the repository-wide trailing-whitespace scan had no
+  hits; `git diff --check` passed.  `.lake/` is ignored while the manifest remains
+  a source artifact.
+- **Plan fold-back:** Stage 1 is complete.  Stage 2 must begin by defining the
+  semantic/syntactic distinction and an exact history recovery interface; it
+  must not inherit Bennett's unqualified overlap iff or Table 1's phase-renamed
+  cleanup as literal state equality.

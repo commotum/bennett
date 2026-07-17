@@ -42,15 +42,25 @@ excluded rather than silently weakened.
 
 - The source is available as `bennett-1973/bennett-1973.md` and an eight-page
   PDF with images of Tables 1 and 2.
-- The repository initially has no Lean project or Lean modules.
-- The host currently provides Lean 4.31.0 and Lake 5.0.0; the project pin still
-  needs to be selected and verified with a compatible mathlib revision.
+- Stage 1 established the `formal/` Lake project on Lean 4.31.0 (Lean commit
+  `68218e876d2a38b1985b8590fff244a83c321783`) and mathlib commit
+  `fabf563a7c95a166b8d7b6efca11c8b4dc9d911f`; the resolved manifest pins all
+  transitive dependencies.
 - The paper's main construction uses read-write-shift quintuples for the source,
   read/write-or-shift quadruples for the reversible target, and three tapes.
 - The paper claims exact target counts `2f + 2N + 4` states,
   `4N + 2z + 3` quadruples, and time `4v + 4λ + 5`; none is yet verified.
-- The supplied Markdown transcribes prose but summarizes the transition tables
-  as images.  Exact table reconstruction requires consulting those images/PDF.
+- The complete PDF and both table images have been audited.  Table 1's state,
+  rule, alphabet, and time arithmetic is internally correct under its atomic
+  history-symbol/fresh-state conventions; its tape-1 space equality remains
+  undefined and potentially off by a right-delimiter cell.
+- The Markdown range-overlap formula at line 94 is a conversion error: the PDF
+  correctly tests unprimed read fields for `/`.  Syntactic rule non-overlap is a
+  sufficient unique-rule discipline but is stronger than extensional semantic
+  determinism/reversibility.
+- Table 1 begins in `A₁` and ends in distinct `C₁`; concrete cleanup restores
+  tapes and heads exactly but restores control only through a phase-forgetting
+  correspondence.
 - The paper's segmented-history and physical sections are downstream of the
   main semantic theorem and are not prerequisites for it.
 
@@ -100,7 +110,7 @@ The goal is complete only when all of the following are evidenced:
 
 ### 1-GUARDRAILS — Source audit and compiling project skeleton
 
-**Status:** In progress.
+**Status:** Completed.
 
 #### Big Picture Objective
 
@@ -355,4 +365,3 @@ Finish the library as an importable, documented, independently auditable result.
 - Documentation explains importing and extending each reusable layer.
 - The original objective, rather than a reduced proxy, is either achieved or
   every remaining gap is explicitly carried forward with evidence and next work.
-
