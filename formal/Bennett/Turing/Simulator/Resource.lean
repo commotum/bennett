@@ -852,6 +852,28 @@ theorem copyTrace_output_footprintPositions
   simp [Tape.delimiterTraversal] at hposition ⊢
   omega
 
+theorem copyTrace_work_footprintPositions_eq_Icc
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (history : Tape source.RuleId) (word : List Symbol) :
+    ExecutionTrace.footprintPositions
+        (fun state : Simulator.Configuration source => state.tape .work)
+        (copyTrace normal history word) =
+      Finset.Icc (-1) (word.length : Int) := by
+  simpa [Tape.delimiterTraversal] using
+    copyTrace_work_footprintPositions normal history word
+
+theorem copyTrace_output_footprintPositions_eq_Icc
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (history : Tape source.RuleId) (word : List Symbol) :
+    ExecutionTrace.footprintPositions
+        (fun state : Simulator.Configuration source => state.tape .output)
+        (copyTrace normal history word) =
+      Finset.Icc (-1) (word.length : Int) := by
+  simpa [Tape.delimiterTraversal] using
+    copyTrace_output_footprintPositions normal history word
+
 @[simp] theorem copyTrace_work_footprintCard
     {source : Machine SourceControl Symbol}
     (normal : Standard.BennettNormalForm source)
@@ -871,6 +893,233 @@ theorem copyTrace_output_footprintPositions
       (copyTrace normal history word)).card = word.length + 2 := by
   rw [copyTrace_output_footprintPositions]
   exact Tape.delimiterTraversal_card word
+
+private theorem copy_foldl_max_le (values : List Nat) (initial bound : Nat)
+    (hinitial : initial ≤ bound)
+    (hvalues : ∀ value ∈ values, value ≤ bound) :
+    values.foldl max initial ≤ bound := by
+  induction values generalizing initial with
+  | nil => simpa using hinitial
+  | cons value values ih =>
+      simp only [List.foldl_cons]
+      apply ih
+      · exact max_le hinitial (hvalues value (by simp))
+      · intro tailValue htail
+        exact hvalues tailValue (by simp [htail])
+
+private theorem copy_initial_le_foldl_max
+    (values : List Nat) (initial : Nat) :
+    initial ≤ values.foldl max initial := by
+  induction values generalizing initial with
+  | nil => rfl
+  | cons value values ih =>
+      simp only [List.foldl_cons]
+      exact le_trans (Nat.le_max_left initial value)
+        (ih (max initial value))
+
+private theorem copy_mem_le_foldl_max
+    (values : List Nat) (initial value : Nat) (hvalue : value ∈ values) :
+    value ≤ values.foldl max initial := by
+  induction values generalizing initial with
+  | nil => simp at hvalue
+  | cons head tail ih =>
+      simp only [List.foldl_cons]
+      rcases List.mem_cons.mp hvalue with rfl | htail
+      · exact le_trans (Nat.le_max_right initial value)
+          (copy_initial_le_foldl_max tail (max initial value))
+      · exact ih (max initial head) htail
+
+private theorem copy_foldl_max_eq
+    (values : List Nat) (bound : Nat)
+    (hvalues : ∀ value ∈ values, value ≤ bound)
+    (hbound : bound ∈ values) :
+    values.foldl max 0 = bound := by
+  apply Nat.le_antisymm
+  · exact copy_foldl_max_le values 0 bound (by simp) hvalues
+  · exact copy_mem_le_foldl_max values 0 bound hbound
+
+@[simp] theorem copyTrace_work_maximumNonblankCells
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (history : Tape source.RuleId) (word : List Symbol) :
+    ExecutionTrace.maximumNonblankCells
+        (fun state : Simulator.Configuration source => state.tape .work)
+        (copyTrace normal history word) = word.length := by
+  unfold ExecutionTrace.maximumNonblankCells
+  let states := (copyTrace normal history word).states
+  let values := states.map fun state =>
+    (state.tape .work).nonblankPositions.card
+  have hfold : values.foldl max 0 =
+      states.foldl
+        (fun peak state => max peak
+          (state.tape .work).nonblankPositions.card) 0 := by
+    simp [values, List.foldl_map]
+  rw [← hfold]
+  apply copy_foldl_max_eq values word.length
+  · intro value hvalue
+    obtain ⟨state, hstate, rfl⟩ := List.mem_map.mp hvalue
+    change state ∈ (copyTrace normal history word).states at hstate
+    rw [copyTrace_work_nonblankPositions_of_mem
+      normal history word hstate]
+    simp
+  · apply List.mem_map.mpr
+    refine ⟨(copyTrace normal history word).initial, ?_, ?_⟩
+    · simp [states, ExecutionTrace.states]
+    · rw [copyTrace_work_nonblankPositions_of_mem normal history word
+        (by simp [ExecutionTrace.states])]
+      simp
+
+@[simp] theorem copyTrace_output_maximumNonblankCells
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (history : Tape source.RuleId) (word : List Symbol) :
+    ExecutionTrace.maximumNonblankCells
+        (fun state : Simulator.Configuration source => state.tape .output)
+        (copyTrace normal history word) = word.length := by
+  unfold ExecutionTrace.maximumNonblankCells
+  let states := (copyTrace normal history word).states
+  let values := states.map fun state =>
+    (state.tape .output).nonblankPositions.card
+  have hfold : values.foldl max 0 =
+      states.foldl
+        (fun peak state => max peak
+          (state.tape .output).nonblankPositions.card) 0 := by
+    simp [values, List.foldl_map]
+  rw [← hfold]
+  apply copy_foldl_max_eq values word.length
+  · intro value hvalue
+    obtain ⟨state, hstate, rfl⟩ := List.mem_map.mp hvalue
+    change state ∈ (copyTrace normal history word).states at hstate
+    exact le_trans
+      (Finset.card_le_card
+        (copyTrace_output_support_of_mem normal history word hstate))
+      (by simp)
+  · obtain ⟨state, hstate, htape⟩ :=
+      List.mem_map.mp (copyTrace_output_full_mem normal history word)
+    apply List.mem_map.mpr
+    refine ⟨state, ?_, ?_⟩
+    · simpa [states] using hstate
+    · rw [htape]
+      change (Tape.ofWord word : Tape Symbol).nonblankPositions.card = _
+      simp
+
+omit [DecidableEq Symbol] in
+theorem activePositions_card_le_nonblank_add_one (tape : Tape Symbol) :
+    tape.activePositions.card ≤ tape.nonblankPositions.card + 1 := by
+  exact Finset.card_insert_le _ _
+
+omit [DecidableEq Symbol] in
+@[simp] theorem ofWord_activePositions_card (word : List Symbol) :
+    (Tape.ofWord word).activePositions.card = word.length + 1 := by
+  have hnot : (-1 : Int) ∉ (Tape.ofWord word).nonblankPositions := by
+    rw [Tape.ofWord_nonblankPositions]
+    simp
+  rw [Tape.activePositions, Tape.ofWord_head,
+    Finset.card_insert_of_notMem hnot, Tape.ofWord_nonblank_card]
+
+@[simp] theorem copyTrace_work_maximumActiveCells
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (history : Tape source.RuleId) (word : List Symbol) :
+    ExecutionTrace.maximumActiveCells
+        (fun state : Simulator.Configuration source => state.tape .work)
+        (copyTrace normal history word) = word.length + 1 := by
+  unfold ExecutionTrace.maximumActiveCells
+  let states := (copyTrace normal history word).states
+  let values := states.map fun state => (state.tape .work).activePositions.card
+  have hfold : values.foldl max 0 =
+      states.foldl
+        (fun peak state => max peak (state.tape .work).activePositions.card)
+        0 := by
+    simp [values, List.foldl_map]
+  rw [← hfold]
+  apply copy_foldl_max_eq values (word.length + 1)
+  · intro value hvalue
+    obtain ⟨state, hstate, rfl⟩ := List.mem_map.mp hvalue
+    change state ∈ (copyTrace normal history word).states at hstate
+    apply le_trans (activePositions_card_le_nonblank_add_one _)
+    rw [copyTrace_work_nonblankPositions_of_mem normal history word hstate]
+    simp
+  · apply List.mem_map.mpr
+    refine ⟨(copyTrace normal history word).initial, ?_, ?_⟩
+    · simp [states, ExecutionTrace.states]
+    · change (Tape.ofWord word).activePositions.card = word.length + 1
+      exact ofWord_activePositions_card word
+
+@[simp] theorem copyTrace_output_maximumActiveCells
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (history : Tape source.RuleId) (word : List Symbol) :
+    ExecutionTrace.maximumActiveCells
+        (fun state : Simulator.Configuration source => state.tape .output)
+        (copyTrace normal history word) = word.length + 1 := by
+  unfold ExecutionTrace.maximumActiveCells
+  let states := (copyTrace normal history word).states
+  let values := states.map fun state =>
+    (state.tape .output).activePositions.card
+  have hfold : values.foldl max 0 =
+      states.foldl
+        (fun peak state => max peak (state.tape .output).activePositions.card)
+        0 := by
+    simp [values, List.foldl_map]
+  rw [← hfold]
+  apply copy_foldl_max_eq values (word.length + 1)
+  · intro value hvalue
+    obtain ⟨state, hstate, rfl⟩ := List.mem_map.mp hvalue
+    change state ∈ (copyTrace normal history word).states at hstate
+    apply le_trans (activePositions_card_le_nonblank_add_one _)
+    apply Nat.add_le_add_right
+    exact le_trans
+      (Finset.card_le_card
+        (copyTrace_output_support_of_mem normal history word hstate))
+      (by simp)
+  · obtain ⟨state, hstate, htape⟩ :=
+      List.mem_map.mp (copyTrace_output_full_mem normal history word)
+    apply List.mem_map.mpr
+    refine ⟨state, ?_, ?_⟩
+    · simpa [states] using hstate
+    · rw [htape]
+      change (Tape.ofWord word : Tape Symbol).activePositions.card = _
+      exact ofWord_activePositions_card word
+
+/-- Empty output has no nonblank cells but still scans two delimiter cells. -/
+theorem copyTrace_empty_data_cost
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (history : Tape source.RuleId) :
+    ExecutionTrace.everNonblankPositions
+        (fun state : Simulator.Configuration source => state.tape .work)
+        (copyTrace normal history []) = ∅ ∧
+      ExecutionTrace.everNonblankPositions
+        (fun state : Simulator.Configuration source => state.tape .output)
+        (copyTrace normal history []) = ∅ ∧
+      ExecutionTrace.footprintPositions
+        (fun state : Simulator.Configuration source => state.tape .work)
+        (copyTrace normal history []) = Finset.Icc (-1) 0 ∧
+      ExecutionTrace.footprintPositions
+        (fun state : Simulator.Configuration source => state.tape .output)
+        (copyTrace normal history []) = Finset.Icc (-1) 0 ∧
+      ExecutionTrace.maximumNonblankCells
+        (fun state : Simulator.Configuration source => state.tape .work)
+        (copyTrace normal history []) = 0 ∧
+      ExecutionTrace.maximumNonblankCells
+        (fun state : Simulator.Configuration source => state.tape .output)
+        (copyTrace normal history []) = 0 ∧
+      ExecutionTrace.maximumActiveCells
+        (fun state : Simulator.Configuration source => state.tape .work)
+        (copyTrace normal history []) = 1 ∧
+      ExecutionTrace.maximumActiveCells
+        (fun state : Simulator.Configuration source => state.tape .output)
+        (copyTrace normal history []) = 1 := by
+  exact ⟨by simpa using
+      (copyTrace_work_everNonblankPositions normal history []),
+    by simpa using
+      (copyTrace_output_everNonblankPositions normal history []),
+    by simpa using
+      (copyTrace_work_footprintPositions_eq_Icc normal history []),
+    by simpa using
+      (copyTrace_output_footprintPositions_eq_Icc normal history []),
+    by simp, by simp, by simp, by simp⟩
 
 end Simulator.Copy.Resource
 
