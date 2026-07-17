@@ -232,7 +232,7 @@ theorem forward_pair {source : Machine SourceControl Symbol}
     · rfl
     · intro index
       cases index
-      · simp only [rule, threeRule_work, Quadruple.execute_tape,
+      · simp only [rule, Quadruple.execute_tape,
           configuration_work]
         change
           ((workAt (pre ++ symbol :: suffix) pre.length).write
@@ -240,11 +240,11 @@ theorem forward_pair {source : Machine SourceControl Symbol}
             workAt (pre ++ symbol :: suffix) (pre.length + 1)
         rw [← read_workAt_append pre symbol suffix, Tape.write_read,
           workAt_move_right]
-      · simp only [rule, threeRule_history, Quadruple.execute_tape,
+      · simp only [rule, Quadruple.execute_tape,
           configuration_history]
         change (history.write (.mark normal.exitId)).move .stay = history
         rw [← hhistory, Tape.write_read, Tape.move_stay]
-      · simp only [rule, threeRule_output, Quadruple.execute_tape,
+      · simp only [rule, Quadruple.execute_tape,
           configuration_output]
         exact prefixAt_write_move pre symbol
 
@@ -286,7 +286,7 @@ theorem backward_pair {source : Machine SourceControl Symbol}
     · rfl
     · intro index
       cases index
-      · simp only [rule, threeRule_work, Quadruple.execute_tape,
+      · simp only [rule, Quadruple.execute_tape,
           configuration_work]
         change
           ((workAt (pre ++ tail.reverse ++ symbol :: done)
@@ -294,11 +294,11 @@ theorem backward_pair {source : Machine SourceControl Symbol}
             workAt (pre ++ tail.reverse ++ symbol :: done)
               (pre.length + tail.length - 1)
         rw [← hread, Tape.write_read, workAt_move_left]
-      · simp only [rule, threeRule_history, Quadruple.execute_tape,
+      · simp only [rule, Quadruple.execute_tape,
           configuration_history]
         change (history.write (.mark normal.exitId)).move .stay = history
         rw [← hhistory, Tape.write_read, Tape.move_stay]
-      · simp only [rule, threeRule_output, Quadruple.execute_tape,
+      · simp only [rule, Quadruple.execute_tape,
           configuration_output]
         change
           ((workAt (pre ++ tail.reverse ++ symbol :: done)
@@ -337,15 +337,15 @@ theorem enter_pair {source : Machine SourceControl Symbol}
     · rfl
     · intro index
       cases index
-      · simp only [rule, threeRule_work, Quadruple.execute_tape,
+      · simp only [rule, Quadruple.execute_tape,
           configuration_work]
         change ((Tape.ofWord word).write .blank).move .right = workAt word 0
         rw [← Tape.read_ofWord word, Tape.write_read, ofWord_move_right]
-      · simp only [rule, threeRule_history, Quadruple.execute_tape,
+      · simp only [rule, Quadruple.execute_tape,
           configuration_history]
         change (history.write (.mark normal.exitId)).move .stay = history
         rw [← hhistory, Tape.write_read, Tape.move_stay]
-      · simp only [rule, threeRule_output, Quadruple.execute_tape,
+      · simp only [rule, Quadruple.execute_tape,
           configuration_output]
         change ((Tape.blankAt (-1)).write .blank).move .right = prefixAt []
         rw [← Tape.read_blankAt (-1), Tape.write_read, blankLeft_move_right]
@@ -381,16 +381,16 @@ theorem turn_pair {source : Machine SourceControl Symbol}
     · rfl
     · intro index
       cases index
-      · simp only [rule, threeRule_work, Quadruple.execute_tape,
+      · simp only [rule, Quadruple.execute_tape,
           configuration_work]
         change ((workAt word word.length).write .blank).move .left =
           workAt word (word.length - 1)
         rw [← read_workAt_end word, Tape.write_read, workAt_move_left]
-      · simp only [rule, threeRule_history, Quadruple.execute_tape,
+      · simp only [rule, Quadruple.execute_tape,
           configuration_history]
         change (history.write (.mark normal.exitId)).move .stay = history
         rw [← hhistory, Tape.write_read, Tape.move_stay]
-      · simp only [rule, threeRule_output, Quadruple.execute_tape,
+      · simp only [rule, Quadruple.execute_tape,
           configuration_output]
         rw [prefixAt_eq_workAt]
         change ((workAt word word.length).write .blank).move .left =
@@ -424,15 +424,15 @@ theorem exit_step {source : Machine SourceControl Symbol}
     · rfl
     · intro index
       cases index
-      · simp only [rule, threeRule_work, Quadruple.execute_tape,
+      · simp only [rule, Quadruple.execute_tape,
           configuration_work]
         change (workAt word (-1)).write .blank = Tape.ofWord word
         rw [← hread, Tape.write_read, workAt_leftDelimiter]
-      · simp only [rule, threeRule_history, Quadruple.execute_tape,
+      · simp only [rule, Quadruple.execute_tape,
           configuration_history]
         change history.write (.mark normal.exitId) = history
         rw [← hhistory, Tape.write_read]
-      · simp only [rule, threeRule_output, Quadruple.execute_tape,
+      · simp only [rule, Quadruple.execute_tape,
           configuration_output]
         change (workAt word (-1)).write .blank = Tape.ofWord word
         rw [← hread, Tape.write_read, workAt_leftDelimiter]
@@ -622,35 +622,6 @@ theorem scheduled_encode {source : Machine SourceControl Symbol}
       (HistoryTape.encode (normal.exitId :: history)) (Tape.ofWord word))
   exact scheduled normal (HistoryTape.encode (normal.exitId :: history))
     (HistoryTape.read_encode_cons normal.exitId history) word
-
-theorem eq_of_domainsOverlap {source : Machine SourceControl Symbol}
-    (normal : Standard.BennettNormalForm source)
-    {first second : CopyRuleId Symbol}
-    (hoverlap : (rule normal first).DomainsOverlap (rule normal second)) :
-    first = second := by
-  have hcompatible := Quadruple.domainCompatible_of_domainsOverlap hoverlap
-  cases first <;> cases second <;>
-    simp_all [rule, threeRule, Quadruple.DomainCompatible,
-      Action.DomainCompatible]
-  all_goals
-    have hwork := hcompatible .work
-    simp at hwork
-    try exact TapeSymbol.mark.inj hwork
-
-theorem eq_of_rangesOverlap {source : Machine SourceControl Symbol}
-    (normal : Standard.BennettNormalForm source)
-    {first second : CopyRuleId Symbol}
-    (hoverlap : (rule normal first).RangesOverlap (rule normal second)) :
-    first = second := by
-  have hcompatible :=
-    (Quadruple.rangesOverlap_iff_rangeCompatible _ _).mp hoverlap
-  cases first <;> cases second <;>
-    simp_all [rule, threeRule, Quadruple.RangeCompatible,
-      Action.RangeCompatible]
-  all_goals
-    have hwork := hcompatible .work
-    simp at hwork
-    try exact TapeSymbol.mark.inj hwork
 
 example {source : Machine SourceControl Symbol}
     (normal : Standard.BennettNormalForm source) :

@@ -143,6 +143,14 @@ structure BennettNormalForm [DecidableEq Control] [DecidableEq Symbol]
   no_rule_sources_finish :
     ∀ index, (machine.rule index).source ≠ finish
 
+theorem BennettNormalForm.start_ne_finish
+    [DecidableEq Control] [DecidableEq Symbol]
+    {machine : Machine Control Symbol} (normal : BennettNormalForm machine) :
+    normal.start ≠ normal.finish := by
+  have hsource := normal.no_rule_sources_finish normal.entryId
+  rw [normal.entry_rule] at hsource
+  exact hsource
+
 theorem BennettNormalForm.initial_step
     [DecidableEq Control] [DecidableEq Symbol]
     {machine : Machine Control Symbol} (normal : BennettNormalForm machine)

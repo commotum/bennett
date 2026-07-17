@@ -129,5 +129,68 @@ theorem reverseRules_contained [Fintype Symbol]
   obtain ⟨ruleId, hrule⟩ := hreverse rule hmem
   exact ⟨indexOf enumerate (.reverse ruleId), by simpa [tableRule] using hrule⟩
 
+/-- Enumeration-independent statement that a schedule uses only Table 1 rules. -/
+def OnlyTableRules {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (rules : List (Rule source)) : Prop :=
+  ∀ rule, rule ∈ rules →
+    ∃ ruleId : TableRuleId source.RuleId Symbol,
+      tableRule normal ruleId = rule
+
+theorem OnlyTableRules.append
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    {first second : List (Rule source)}
+    (hfirst : OnlyTableRules normal first)
+    (hsecond : OnlyTableRules normal second) :
+    OnlyTableRules normal (first ++ second) := by
+  intro rule hmem
+  rw [List.mem_append] at hmem
+  exact hmem.elim (hfirst rule) (hsecond rule)
+
+theorem onlyTableRules_of_forward
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    {rules : List (Rule source)}
+    (hforward : OnlyForwardRules source rules) :
+    OnlyTableRules normal rules := by
+  intro rule hmem
+  obtain ⟨ruleId, hrule⟩ := hforward rule hmem
+  exact ⟨.forward ruleId, by simpa [tableRule] using hrule⟩
+
+theorem onlyTableRules_copy
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source) (word : List Symbol) :
+    OnlyTableRules normal (Copy.schedule normal word) := by
+  intro displayed hmem
+  simp only [Copy.schedule, List.mem_map] at hmem
+  obtain ⟨ruleId, _, rfl⟩ := hmem
+  exact ⟨.copy ruleId, rfl⟩
+
+theorem onlyTableRules_of_reverse
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    {rules : List (Rule source)}
+    (hreverse : OnlyReverseRules source rules) :
+    OnlyTableRules normal rules := by
+  intro rule hmem
+  obtain ⟨ruleId, hrule⟩ := hreverse rule hmem
+  exact ⟨.reverse ruleId, by simpa [tableRule] using hrule⟩
+
+/-- Any constructor-tagged Table 1 schedule is contained after enumeration. -/
+theorem tableRules_contained [Fintype Symbol]
+    {source : Machine SourceControl Symbol}
+    {normal : Standard.BennettNormalForm source}
+    (enumerate : TableRuleId source.RuleId Symbol ≃
+      Fin (Fintype.card (TableRuleId source.RuleId Symbol)))
+    {rules : List (Rule source)}
+    (htable : OnlyTableRules normal rules) :
+    ∀ rule, rule ∈ rules →
+      ∃ index : (machineWithEnumeration normal enumerate).RuleId,
+        (machineWithEnumeration normal enumerate).rule index = rule := by
+  intro rule hmem
+  obtain ⟨ruleId, hrule⟩ := htable rule hmem
+  exact ⟨indexOf enumerate ruleId, by simpa using hrule⟩
+
 end Simulator
 end Bennett.Turing
