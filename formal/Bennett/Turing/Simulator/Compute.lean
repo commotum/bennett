@@ -16,12 +16,6 @@ namespace Simulator
 
 variable {SourceControl Symbol : Type}
 
-/-- Proof-facing dispatch for the complete forward rule family. -/
-def forwardRule (source : Machine SourceControl Symbol) :
-    ForwardRuleId source.RuleId → Rule source
-  | .rewrite ruleId => forwardRewriteRule source ruleId
-  | .moveRecord ruleId => forwardRecordRule source ruleId
-
 /-- First half of the forward simulation of a named source quintuple. -/
 def forwardRewriteRule (source : Machine SourceControl Symbol)
     (ruleId : source.RuleId) : Rule source :=
@@ -39,6 +33,12 @@ def forwardRecordRule (source : Machine SourceControl Symbol)
     (.move sourceRule.move)
     (.rewrite .blank (.mark ruleId))
     (.move .stay)
+
+/-- Proof-facing dispatch for the complete forward rule family. -/
+def forwardRule (source : Machine SourceControl Symbol) :
+    ForwardRuleId source.RuleId → Rule source
+  | .rewrite ruleId => forwardRewriteRule source ruleId
+  | .moveRecord ruleId => forwardRecordRule source ruleId
 
 /-- Exact configuration between the two forward simulator rules. -/
 def forwardMiddle (source : Machine SourceControl Symbol)
@@ -169,6 +169,117 @@ theorem forward_two_steps_of_stepWithRuleId
   have hmatches := source.select_matches state.current hselect
   subst after
   exact forward_two_steps_of_matches source ruleId state hmatches
+
+/-- The displayed two-rule schedule for one named source transition. -/
+def forwardPairRules (source : Machine SourceControl Symbol)
+    (ruleId : source.RuleId) : List (Rule source) :=
+  [forwardRewriteRule source ruleId, forwardRecordRule source ruleId]
+
+theorem forwardPair_scheduled (source : Machine SourceControl Symbol)
+    (ruleId : source.RuleId)
+    (state : HistoryState (Bennett.Turing.Configuration SourceControl Symbol)
+      source.RuleId)
+    (hmatches : (source.rule ruleId).Matches state.current) :
+    Quadruple.Scheduled (forwardPairRules source ruleId)
+      (forwardConfiguration source state)
+      (forwardConfiguration source
+        { current := (source.rule ruleId).execute state.current
+          history := ruleId :: state.history }) := by
+  simp only [forwardPairRules, Quadruple.Scheduled]
+  refine ⟨forwardRewriteRule_matches source ruleId state hmatches, ?_⟩
+  rw [forwardRewriteRule_execute source ruleId state]
+  exact ⟨forwardRecordRule_matches source ruleId state,
+    forwardRecordRule_execute source ruleId state⟩
+
+/-- Every displayed rule belongs to the forward family of `source`. -/
+def OnlyForwardRules (source : Machine SourceControl Symbol)
+    (rules : List (Rule source)) : Prop :=
+  ∀ rule, rule ∈ rules →
+    ∃ ruleId : ForwardRuleId source.RuleId, forwardRule source ruleId = rule
+
+theorem onlyForwardRules_pair (source : Machine SourceControl Symbol)
+    (ruleId : source.RuleId) :
+    OnlyForwardRules source (forwardPairRules source ruleId) := by
+  intro rule hmem
+  simp only [forwardPairRules, List.mem_cons, List.not_mem_nil, or_false] at hmem
+  rcases hmem with hrewrite | hrecord
+  · exact ⟨ForwardRuleId.rewrite ruleId, by
+      simpa [forwardRule] using hrewrite.symm⟩
+  · exact ⟨ForwardRuleId.moveRecord ruleId, by
+      simpa [forwardRule] using hrecord.symm⟩
+
+theorem OnlyForwardRules.append (source : Machine SourceControl Symbol)
+    {first second : List (Rule source)}
+    (hfirst : OnlyForwardRules source first)
+    (hsecond : OnlyForwardRules source second) :
+    OnlyForwardRules source (first ++ second) := by
+  intro rule hmem
+  rw [List.mem_append] at hmem
+  exact hmem.elim (hfirst rule) (hsecond rule)
+
+/--
+Lift any exact source run to an explicit `2n`-rule physical schedule.  The
+theorem returns the actual newest-first rule-ID history and works from an
+arbitrary pre-existing history suffix.
+-/
+theorem forward_scheduled_of_run
+    [DecidableEq SourceControl] [DecidableEq Symbol]
+    (source : Machine SourceControl Symbol)
+    {n : Nat}
+    {before after : Bennett.Turing.Configuration SourceControl Symbol}
+    (history : List source.RuleId)
+    (hrun : source.step.Runs n before after) :
+    ∃ finalHistory rules,
+      finalHistory.length = history.length + n ∧
+      rules.length = 2 * n ∧
+      Quadruple.Scheduled rules
+        (forwardConfiguration source
+          { current := before, history := history })
+        (forwardConfiguration source
+          { current := after, history := finalHistory }) ∧
+      OnlyForwardRules source rules := by
+  induction n generalizing before history with
+  | zero =>
+      have hbefore : before = after :=
+        (PartialStep.runs_zero_iff source.step before after).mp hrun
+      subst before
+      exact ⟨history, [], by simp, by simp, rfl, by simp [OnlyForwardRules]⟩
+  | succ n ih =>
+      obtain ⟨next, hstep, htail⟩ :=
+        (PartialStep.runs_succ_iff source.step n before after).mp hrun
+      unfold Machine.step at hstep
+      obtain ⟨ruleId, hselect, hnext⟩ := Option.map_eq_some_iff.mp hstep
+      have hmatches := source.select_matches before hselect
+      have hnextEq : (source.rule ruleId).execute before = next := hnext
+      subst next
+      obtain ⟨finalHistory, tailRules, hhistory, htailLength,
+          htailScheduled, htailOnly⟩ := ih (ruleId :: history) htail
+      refine ⟨finalHistory, forwardPairRules source ruleId ++ tailRules,
+        ?_, ?_, ?_, ?_⟩
+      · simp [hhistory, Nat.add_assoc, Nat.add_comm, Nat.add_left_comm]
+      · simp [htailLength, forwardPairRules]
+        omega
+      · exact Quadruple.Scheduled.append
+          (forwardPair_scheduled source ruleId
+            { current := before, history := history } hmatches)
+          htailScheduled
+      · exact OnlyForwardRules.append source
+          (onlyForwardRules_pair source ruleId) htailOnly
+
+theorem forward_scheduled_of_run_empty
+    [DecidableEq SourceControl] [DecidableEq Symbol]
+    (source : Machine SourceControl Symbol)
+    {n : Nat}
+    {before after : Bennett.Turing.Configuration SourceControl Symbol}
+    (hrun : source.step.Runs n before after) :
+    ∃ history rules,
+      history.length = n ∧ rules.length = 2 * n ∧
+      Quadruple.Scheduled rules
+        (forwardConfiguration source { current := before, history := [] })
+        (forwardConfiguration source
+          { current := after, history := history }) ∧
+      OnlyForwardRules source rules := by
+  simpa using forward_scheduled_of_run source ([] : List source.RuleId) hrun
 
 end Simulator
 end Bennett.Turing
