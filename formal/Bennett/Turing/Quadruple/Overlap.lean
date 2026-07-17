@@ -25,6 +25,14 @@ def RangeCompatible : Action Symbol → Action Symbol → Prop
   | .rewrite _ first, .rewrite _ second => first = second
   | _, _ => True
 
+instance [DecidableEq Symbol] (first second : Action Symbol) :
+    Decidable (first.DomainCompatible second) := by
+  cases first <;> cases second <;> simp [DomainCompatible] <;> infer_instance
+
+instance [DecidableEq Symbol] (first second : Action Symbol) :
+    Decidable (first.RangeCompatible second) := by
+  cases first <;> cases second <;> simp [RangeCompatible] <;> infer_instance
+
 /-- A canonical tape witnessing compatible action domains. -/
 def commonDomainTape : Action Symbol → Action Symbol → Tape Symbol
   | .rewrite scanned _, _ => (Tape.blankAt 0).write scanned
@@ -86,6 +94,20 @@ def RangeCompatible (first second : Quadruple Control TapeIndex Symbol) : Prop :
   first.target = second.target ∧
     ∀ index, (first.action index).RangeCompatible (second.action index)
 
+instance [DecidableEq Control] [Fintype TapeIndex]
+    [∀ index, DecidableEq (Symbol index)]
+    (first second : Quadruple Control TapeIndex Symbol) :
+    Decidable (first.DomainCompatible second) := by
+  unfold DomainCompatible
+  infer_instance
+
+instance [DecidableEq Control] [Fintype TapeIndex]
+    [∀ index, DecidableEq (Symbol index)]
+    (first second : Quadruple Control TapeIndex Symbol) :
+    Decidable (first.RangeCompatible second) := by
+  unfold RangeCompatible
+  infer_instance
+
 /-- Semantic domain overlap implies the tape-wise compatibility test. -/
 theorem domainCompatible_of_domainsOverlap
     {first second : Quadruple Control TapeIndex Symbol}
@@ -123,6 +145,16 @@ theorem domainsOverlap_iff_domainCompatible
     first.DomainsOverlap second ↔ first.DomainCompatible second :=
   ⟨domainCompatible_of_domainsOverlap, domainsOverlap_of_domainCompatible⟩
 
+instance [DecidableEq Control] [Fintype TapeIndex]
+    [∀ index, DecidableEq (Symbol index)]
+    (first second : Quadruple Control TapeIndex Symbol) :
+    Decidable (first.DomainsOverlap second) :=
+  if hcompatible : first.DomainCompatible second then
+    isTrue (domainsOverlap_of_domainCompatible hcompatible)
+  else
+    isFalse fun hoverlap =>
+      hcompatible (domainCompatible_of_domainsOverlap hoverlap)
+
 /-- Range membership is exactly domain membership for the formal inverse. -/
 theorem inRange_iff_inverse_matches
     (rule : Quadruple Control TapeIndex Symbol)
@@ -156,6 +188,16 @@ theorem rangesOverlap_iff_rangeCompatible
     first.RangesOverlap second ↔ first.RangeCompatible second := by
   rw [rangesOverlap_iff_inverse_domainsOverlap,
     domainsOverlap_iff_domainCompatible, inverse_domainCompatible_inverse]
+
+instance [DecidableEq Control] [Fintype TapeIndex]
+    [∀ index, DecidableEq (Symbol index)]
+    (first second : Quadruple Control TapeIndex Symbol) :
+    Decidable (first.RangesOverlap second) :=
+  if hcompatible : first.RangeCompatible second then
+    isTrue ((rangesOverlap_iff_rangeCompatible first second).2 hcompatible)
+  else
+    isFalse fun hoverlap =>
+      hcompatible ((rangesOverlap_iff_rangeCompatible first second).1 hoverlap)
 
 end Quadruple
 end Bennett.Turing
