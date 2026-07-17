@@ -1,5 +1,6 @@
 import Bennett.Turing.Tape
 import Lean.Elab.Tactic.Omega
+import Mathlib.Data.Int.Basic
 
 /-!
 # Standard finite words on a tape
@@ -63,19 +64,30 @@ theorem cellsFrom_at_nat (word : List Symbol) (start : Int) (n : Nat) :
       | zero => simp [cellsFrom]
       | succ n =>
           rw [cellsFrom_cons_of_ne]
-          · convert ih (start + 1) n using 1 <;> trace_state
+          · have hposition :
+                start + ((n + 1 : Nat) : Int) = start + 1 + (n : Int) := by
+              omega
+            rw [hposition]
+            simpa using ih (start + 1) n
           · omega
+
+/-- Every position strictly before the word's start is blank. -/
+theorem cellsFrom_of_lt (word : List Symbol) (start position : Int)
+    (hposition : position < start) :
+    cellsFrom word start position = .blank := by
+  induction word generalizing start with
+  | nil => rfl
+  | cons symbol rest ih =>
+      rw [cellsFrom_cons_of_ne]
+      · exact ih (start + 1) (by omega)
+      · omega
 
 /-- The cell immediately left of a represented word is blank. -/
 @[simp]
 theorem cellsFrom_left_blank (word : List Symbol) (start : Int) :
     cellsFrom word start (start + (-1)) = .blank := by
-  induction word generalizing start with
-  | nil => rfl
-  | cons symbol rest ih =>
-      rw [cellsFrom_cons_of_ne]
-      · convert ih (start + 1) using 1 <;> omega
-      · omega
+  apply cellsFrom_of_lt
+  omega
 
 /-- The cell immediately after a represented word is blank. -/
 @[simp]
@@ -91,7 +103,7 @@ theorem support_card_cellsFrom (word : List Symbol) (start : Int) :
   | nil => rfl
   | cons symbol rest ih =>
       have hblank : cellsFrom rest (start + 1) start = .blank := by
-        convert cellsFrom_left_blank rest (start + 1) using 1 <;> omega
+        exact cellsFrom_of_lt rest (start + 1) start (by omega)
       have hnot : start ∉ (cellsFrom rest (start + 1)).support := by
         rw [Finsupp.notMem_support_iff]
         exact hblank
