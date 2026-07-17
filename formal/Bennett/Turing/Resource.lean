@@ -47,6 +47,10 @@ def states (trace : ExecutionTrace State) : List State :=
 def transitionCount (trace : ExecutionTrace State) : Nat :=
   trace.subsequent.length
 
+/-- Last state, equal to the initial state for a zero-transition trace. -/
+def final (trace : ExecutionTrace State) : State :=
+  trace.subsequent.foldl (fun _ next => next) trace.initial
+
 /-- Execute exactly `n` transitions and retain every state including endpoints. -/
 def run (step : PartialStep State) : Nat → State → Option (ExecutionTrace State)
   | 0, state => some (singleton state)
@@ -73,6 +77,12 @@ def run (step : PartialStep State) : Nat → State → Option (ExecutionTrace St
     (prepend state trace).transitionCount = trace.transitionCount + 1 := by
   simp [prepend, transitionCount]
 
+@[simp] theorem final_singleton (state : State) :
+    (singleton state).final = state := rfl
+
+@[simp] theorem final_prepend (state : State) (trace : ExecutionTrace State) :
+    (prepend state trace).final = trace.final := rfl
+
 @[simp] theorem run_zero (step : PartialStep State) (state : State) :
     run step 0 state = some (singleton state) := rfl
 
@@ -86,17 +96,71 @@ theorem transitionCount_of_run (step : PartialStep State)
       subst trace
       rfl
   | succ n ih =>
-      simp only [run] at htrace
+      change
+        (step start).bind (fun next =>
+          (run step n next).bind (fun rest =>
+            some (prepend start rest))) = some trace at htrace
       cases hstep : step start with
       | none => simp [hstep] at htrace
       | some next =>
-          simp only [hstep, Option.bind_some] at htrace
           cases hrest : run step n next with
-          | none => simp [hrest] at htrace
+          | none => simp [hstep, hrest] at htrace
           | some rest =>
-              simp only [hrest, Option.bind_some, Option.some.injEq] at htrace
+              simp [hstep, hrest] at htrace
               subst trace
               simp [ih hrest]
+
+/-- A generated trace has the same exact endpoint as `PartialStep.iterate`. -/
+theorem runs_final_of_run (step : PartialStep State)
+    {n : Nat} {start : State} {trace : ExecutionTrace State}
+    (htrace : run step n start = some trace) :
+    step.Runs n start trace.final := by
+  induction n generalizing start trace with
+  | zero =>
+      simp only [run, Option.some.injEq] at htrace
+      subst trace
+      rfl
+  | succ n ih =>
+      change
+        (step start).bind (fun next =>
+          (run step n next).bind (fun rest =>
+            some (prepend start rest))) = some trace at htrace
+      cases hstep : step start with
+      | none => simp [hstep] at htrace
+      | some next =>
+          cases hrest : run step n next with
+          | none => simp [hstep, hrest] at htrace
+          | some rest =>
+              have htraceEq : prepend start rest = trace := by
+                apply Option.some.inj
+                simpa [hstep, hrest] using htrace
+              subst trace
+              rw [PartialStep.Runs, PartialStep.iterate_succ, hstep]
+              simpa [PartialStep.Runs] using ih hrest
+
+/-- Exact runs are equivalently nonempty traces with the same endpoint. -/
+theorem runs_iff_exists_run (step : PartialStep State)
+    (n : Nat) (start finish : State) :
+    step.Runs n start finish ↔
+      ∃ trace : ExecutionTrace State,
+        run step n start = some trace ∧ trace.final = finish := by
+  constructor
+  · intro hrun
+    induction n generalizing start finish with
+    | zero =>
+        have hfinish := (PartialStep.runs_zero_iff step start finish).mp hrun
+        subst finish
+        exact ⟨singleton start, rfl, rfl⟩
+    | succ n ih =>
+        obtain ⟨next, hstep, htail⟩ :=
+          (PartialStep.runs_succ_iff step n start finish).mp hrun
+        obtain ⟨rest, hrest, hfinal⟩ :=
+          ih (start := next) (finish := finish) htail
+        refine ⟨prepend start rest, ?_, ?_⟩
+        · simp [run, hstep, hrest]
+        · simp [hfinal]
+  · rintro ⟨trace, htrace, rfl⟩
+    exact runs_final_of_run step htrace
 
 /-- Absolute head positions scanned by a nonempty trace. -/
 def visitedPositions (tape : State → Turing.Tape Symbol)
