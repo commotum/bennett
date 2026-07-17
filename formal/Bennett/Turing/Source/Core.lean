@@ -105,6 +105,10 @@ variable {Control Symbol : Type*}
 /-- Intrinsic rule identifier type; its cardinality is `ruleCount`. -/
 abbrev RuleId (machine : Machine Control Symbol) := Fin machine.ruleCount
 
+@[simp] theorem ruleId_card (machine : Machine Control Symbol) :
+    Fintype.card machine.RuleId = machine.ruleCount :=
+  Fintype.card_fin machine.ruleCount
+
 /-- No two rule identifiers have the same control/read key. -/
 def SyntacticallyDeterministic (machine : Machine Control Symbol) : Prop :=
   Function.Injective fun index : machine.RuleId => (machine.rule index).key

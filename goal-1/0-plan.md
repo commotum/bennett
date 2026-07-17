@@ -202,7 +202,7 @@ Expose the three-stage pattern independently of Turing-machine details.
 
 ### 4-TURING-CORE — Executable tape and source-machine semantics
 
-**Status:** Pending.
+**Status:** Completed.
 
 #### Big Picture Objective
 

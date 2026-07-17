@@ -1,6 +1,6 @@
 # 4-TURING-CORE
 
-**Status:** In progress.
+**Status:** Completed on 2026-07-17.
 
 ## Current Facts
 
@@ -27,9 +27,11 @@
   and an executable finite nonblank support without trimming invariants.
 - Keep the alphabet and control-state types generic.  Require decidable equality
   for execution; require `Fintype` only in later syntax/cardinality theorems.
-- Represent a source program as a finite list of quintuples.  Define its
-  existential rule relation separately from the first-applicable executable
-  scanner, then prove agreement under a visible key-uniqueness assumption.
+- Represent a source program by an intrinsic count `N` and a table
+  `Fin N → Quintuple`.  Define its existential rule relation separately from the
+  first-applicable executable scanner, then prove agreement under a visible
+  key-injectivity assumption.  This gives exact rule identifiers/counts without
+  imposing `Fintype` on the control or nonblank-symbol types.
 - Allow empty proof-carrying standard words at the data-model level.  Later
   theorems must either cover them or add an explicit nonempty premise.
 - Count source transitions with Stage 2 `Runs`.  Define trace-derived visited,
@@ -109,4 +111,77 @@ stages without committing resource claims that have not yet been derived.
 
 ## Stage Results
 
-- In progress.
+- Added `Bennett.Turing.Tape`:
+  - `TapeSymbol Symbol` adjoins exactly one typed blank to the nonblank alphabet;
+  - `Tape` is the canonical sparse store `Int →₀ TapeSymbol Symbol` plus an
+    absolute `Int` head;
+  - custom `CellStore.set` is executable, unlike mathlib's noncomputable
+    `Finsupp.update` in the pinned version;
+  - read/write/move/write-then-move laws, update idempotence, exact active and
+    nonblank positions, `TapeSymbol.equivOption`, and alphabet cardinality are
+    exposed.
+- Added `Bennett.Turing.Word`.  A standard word is simply `List Symbol`, so an
+  embedded blank is unrepresentable.  `Tape.ofWord` places it at absolute cells
+  `[0,length)`, scans the left blank `-1`, and deliberately supports `[]`.
+  Proved exact support `Finset.Ico`, both delimiter blanks, support cardinality,
+  indexed reads, and `Tape.ofWord_injective`.
+- Added `Bennett.Turing.Source.Core` with `Configuration`, source `Quintuple`,
+  explicit `Matches`, write/move/control `execute`, and finite `Machine` syntax
+  with `ruleCount` and `RuleId = Fin ruleCount`.  Execution selects the least
+  matching rule and remains separate from the existential `StepRel`.
+- Added `Bennett.Turing.Source.Determinism`.  The key condition
+  `SyntacticallyDeterministic` is injectivity of indexed
+  `(source, scanned)` keys.  It proves declarative `StepRel` right-uniqueness and
+  `step = some ↔ StepRel`.  A negative two-rule example demonstrates that a
+  priority-based `PartialStep` alone does not prove unique applicability.
+- Added `Bennett.Turing.Source.Standard`:
+  - exact `Standard.config`, optional `NonemptyWord`, and relational
+    `ComputesIn`/`Computes`;
+  - accepted inputs are an explicit `Behavior.accepts` predicate rather than
+    all syntactically standard words by fiat;
+  - `BennettNormalForm` replaces “appear in no other quintuple” with separate
+    unique-entry/no-incoming-start/unique-exit/no-outgoing-finish fields;
+  - initial-entry execution and final-control halting are proved; and
+  - `computes_output_unique` proves the standard relation is a partial function.
+- Added `Bennett.Turing.Resource`.  `ExecutionTrace` has a mandatory initial
+  state and list of subsequent states, so a successful `n`-step trace contains
+  `n+1` states and has transition count `n`.  `runs_iff_exists_run` bridges it
+  exactly to Stage 2 `Runs`.
+- Resource measures are deliberately separate: `visitedPositions`,
+  `everNonblankPositions`, `footprintPositions`, `maximumNonblankCells`, and
+  `maximumActiveCells`.  `delimiterTraversal_card` proves a potential complete
+  word sweep has `length+2` positions, including two positions for the empty
+  word.  This does not assert that a particular machine actually performs the
+  sweep.
+- Added kernel-checked executable examples for a one-rule machine: it writes at
+  old head `-1`, moves to `0`, scans the first original symbol, halts, produces a
+  two-state/one-transition trace, and exercises zero-step/empty-word resources.
+  No `native_decide` proof is used.
+- Added thin `Turing.API`, re-exported it from `Bennett.lean`, and kept
+  `Turing.Audit` outside the public import graph.
+- Verification passed:
+
+  ```text
+  lake build Bennett.Turing.Tape
+  lake build Bennett.Turing.Word
+  lake build Bennett.Turing.Source.Core
+  lake build Bennett.Turing.Source.Determinism
+  lake build Bennett.Turing.Source.Standard
+  lake build Bennett.Turing.Resource
+  lake build Bennett.Turing.Audit
+  lake build Bennett.Turing.API
+  lake build Bennett
+  lake build
+  ```
+
+- Principal axiom audit reports only Lean/mathlib foundations.  Sparse-tape,
+  finite-support, finite-cardinality, and rule-selection results use
+  `[propext, Classical.choice, Quot.sound]`; the generic exact trace/run bridge
+  uses `[propext, Quot.sound]`.  No project-specific axiom, proof hole, or
+  compiler-trusting `native_decide` proof was introduced.
+- Correct interpretation learned for later stages: `Tape.blank` has head `0`,
+  while `Tape.ofWord []` is blank with head `-1`; theorem signatures must always
+  name blank-tape heads.  For a word of length `λ`, nonblank support is `λ`,
+  simultaneous active cells at a delimiter are `λ+1`, and a complete
+  delimiter-to-delimiter footprint is `λ+2`.  The paper's “squares used” cannot
+  be identified with one of these without a constructed trace theorem.

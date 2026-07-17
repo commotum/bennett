@@ -64,6 +64,41 @@ def Computes [DecidableEq Control] [DecidableEq Symbol]
     (input output : List Symbol) : Prop :=
   ∃ n, ComputesIn machine start finish n input output
 
+private theorem final_eq_of_halted_runs {State : Type*}
+    {step : PartialStep State} {n m : Nat} {start finish₁ finish₂ : State}
+    (hrun₁ : step.Runs n start finish₁) (hhalt₁ : step.Halted finish₁)
+    (hrun₂ : step.Runs m start finish₂) (hhalt₂ : step.Halted finish₂) :
+    finish₁ = finish₂ := by
+  have shorter_unique :
+      ∀ {n m : Nat} {first second : State}, n ≤ m →
+        step.Runs n start first → step.Halted first →
+        step.Runs m start second → first = second := by
+    intro short long first second hle hshort hhalt hlong
+    obtain ⟨extra, rfl⟩ := Nat.exists_eq_add_of_le hle
+    rw [PartialStep.Runs] at hshort hlong
+    rw [PartialStep.iterate_add, hshort] at hlong
+    simp only [Option.bind_some] at hlong
+    cases extra with
+    | zero => exact Option.some.inj hlong
+    | succ extra =>
+        rw [PartialStep.iterate_succ, hhalt] at hlong
+        contradiction
+  rcases Nat.le_total n m with hle | hle
+  · exact shorter_unique hle hrun₁ hhalt₁ hrun₂
+  · exact (shorter_unique hle hrun₂ hhalt₂ hrun₁).symm
+
+/-- The standard input/output relation is a partial function. -/
+theorem computes_output_unique [DecidableEq Control] [DecidableEq Symbol]
+    (machine : Machine Control Symbol) (start finish : Control) (input : List Symbol)
+    {output₁ output₂ : List Symbol}
+    (h₁ : Computes machine start finish input output₁)
+    (h₂ : Computes machine start finish input output₂) : output₁ = output₂ := by
+  obtain ⟨n, hrun₁, hhalt₁⟩ := h₁
+  obtain ⟨m, hrun₂, hhalt₂⟩ := h₂
+  have hconfig : config finish output₁ = config finish output₂ :=
+    final_eq_of_halted_runs hrun₁ hhalt₁ hrun₂ hhalt₂
+  exact config_word_injective finish hconfig
+
 /--
 Semantic standard behavior: every reachable halt on an accepted standard input
 has the named final control and exact standard-tape form.
@@ -72,11 +107,13 @@ structure Behavior [DecidableEq Control] [DecidableEq Symbol]
     (machine : Machine Control Symbol) where
   start : Control
   finish : Control
+  accepts : List Symbol → Prop
   syntacticDeterminism : machine.SyntacticallyDeterministic
   halted_standard :
     ∀ (input : List Symbol) {n : Nat}
       {halted : Configuration Control Symbol},
-      machine.step.Runs n (config start input) halted →
+      accepts input →
+        machine.step.Runs n (config start input) halted →
         machine.step.Halted halted →
           ∃ output : List Symbol, halted = config finish output
 

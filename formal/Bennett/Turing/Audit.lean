@@ -134,4 +134,5 @@ end Bennett.TuringAudit
 #print axioms Bennett.Turing.Machine.SyntacticallyDeterministic.stepRel_rightUnique
 #print axioms Bennett.Turing.Machine.SyntacticallyDeterministic.step_eq_some_iff
 #print axioms Bennett.Turing.Standard.BennettNormalForm.initial_step_exact
+#print axioms Bennett.Turing.Standard.computes_output_unique
 #print axioms Bennett.ExecutionTrace.runs_iff_exists_run

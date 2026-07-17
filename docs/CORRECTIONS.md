@@ -41,7 +41,11 @@ it does not license silently using the proposed repair.
   cross-stage domain/range non-overlap.
 - **Consequences:** `StandardSource` will expose directional freshness and
   nondegeneracy assumptions; exact state counts remain conditional on them.
-- **Status:** Open (Stages 4, 6, and 7).
+- **Status:** The directional assumptions are formalized in Stage 4 as
+  `Standard.BennettNormalForm` (`entry_only_rule_from_start`,
+  `no_rule_targets_start`, `exit_only_rule_to_finish`, and
+  `no_rule_sources_finish`).  Concrete Table 1 use and exact counts remain
+  Stages 6–7.
 
 ## C-003 — Empty standard strings are unspecified
 
@@ -57,7 +61,11 @@ it does not license silently using the proposed repair.
 - **Justification:** avoids silently deriving a domain restriction from a diagram.
 - **Consequences:** executable edge cases and the exact copy trace formula belong
   in Stages 4, 6, and 7.
-- **Status:** Open.
+- **Status:** Stage 4's canonical model admits `[]`, represents it as an all-blank
+  tape with head at the left delimiter `-1`, and proves its potential complete
+  delimiter traversal has two cells (`λ+2 = 2`).  `NonemptyWord` remains an
+  explicit optional premise; copy-loop execution/time proofs in Stages 6–7 must
+  determine whether the paper theorem covers `λ=0`.
 
 ## C-004 — “About twice” conflicts with the target step unit
 
@@ -97,7 +105,11 @@ it does not license silently using the proposed repair.
 - **Justification:** the measures differ on blank cells even for Table 1's trace.
 - **Consequences:** no exact space theorem is inferred from semantic simulation;
   Stage 4 defines measures and Stage 7 audits the formulas.
-- **Status:** Open.
+- **Status:** Stage 4 formalizes separate `visitedPositions`,
+  `everNonblankPositions`, `footprintPositions`, `maximumNonblankCells`, and
+  `maximumActiveCells`.  It proves only the layout fact that a complete
+  delimiter traversal has `λ+2` positions; actual Table 1 trace footprints and
+  the source-tape `s`/`s+1` question remain open for Stages 6–7.
 
 ## C-006 — Table 2 erasure is conditional inverse copying
 

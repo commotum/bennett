@@ -101,18 +101,28 @@ fits the required semantics.
   or writing.
 - **Selected:** the tape is two-way infinite, matching the paper's unbounded
   tape diagrams and avoiding a left-boundary convention absent from the source.
-- **Owned by Stage 4:** the executable tape representation.  A zipper and a
-  finite-support function are candidates; the choice must support exact head and
-  visited-cell reasoning.
-- **Owned by Stage 4:** concrete encodings of finite state and alphabet types.
+- **Selected and formalized in Stage 4:** a tape has absolute `Int` head
+  position and canonical finite-support cells
+  `Int →₀ TapeSymbol Symbol`.  `TapeSymbol` adjoins exactly one blank to a
+  generic type of nonblank symbols.  A custom update is used because the pinned
+  mathlib's general `Finsupp.update` is noncomputable.
+- **Selected and formalized in Stage 4:** source programs have an intrinsic
+  `ruleCount` and table `Fin ruleCount → Quintuple`; control and nonblank-symbol
+  types remain generic, with decidable equality required only for execution and
+  `Fintype` required only by later cardinality results.
 - **Selected:** a standard nonempty word occupies consecutive nonblank cells and
   is surrounded by blanks; its head scans the blank immediately to its left.
-- **Owned by Stage 4:** treatment of the empty word.  The paper says strings with
-  no embedded blanks but does not state whether length zero is admitted; exact
-  copy/time formulas must cover or explicitly exclude it.
+- **Selected and formalized in Stage 4:** base standard words are `List Symbol`
+  and therefore blank-free by type.  Empty words are admitted by the data model;
+  `NonemptyWord` is a separate predicate.  Each later theorem must cover `[]` or
+  expose nonemptiness in its signature.
 - **Selected:** malformed inputs are outside the central standard-input theorem.
   Behavior on them remains defined where the machine syntax permits, but no
   standard simulation claim is inferred.
+- **Selected and formalized in Stage 4:** `Standard.Behavior.accepts` is an
+  explicit predicate on standard words.  `BennettNormalForm` states entry/exit
+  rule uniqueness, no incoming rule to start, and no outgoing rule from finish
+  directionally rather than using “appears nowhere else.”
 
 ## Bennett Stage and State Conventions
 
@@ -164,7 +174,13 @@ fits the required semantics.
 - **Selected:** the claimed history alphabet cardinality `N+1` treats each of
   the `N` rule identifiers as one atomic symbol disjoint from blank.  A fixed
   alphabet encoding would change history space, transition counts, and time.
-- **Owned by Stage 4:** primary `usedCells` and `visitedCells` definitions.
+- **Selected and formalized in Stage 4:** a nonempty `ExecutionTrace` contains
+  both endpoints and counts only successful transitions.  Tape resource APIs
+  distinguish head-visited positions, ever-nonblank positions, their union
+  footprint, peak nonblank cells, and peak active cells (support plus head).
+- **Selected and formalized in Stage 4:** `Tape.blank` means a blank tape with
+  head at `0`, whereas `Tape.ofWord []` is blank with head at `-1`.  “Blank tape”
+  in central theorem signatures must always include its head convention.
 - **Owned by Stage 7:** whether tape 1's paper parameter `s` counts the initial
   head-scanned blank, and exact endpoint-blank conventions for all three tapes.
   The paper explicitly reports `v+1` and `λ+2` on tapes 2 and 3, strongly
