@@ -33,10 +33,10 @@
   forward connectors, four copy-loop controls, reverse source controls, and
   reverse connectors.  This yields the intended `2f+2N+4` cardinality without
   name-freshness hypotheses.
-- Require an explicit finite enumeration `Fin k ≃ Symbol` for nonblank source
-  symbols when constructing the complete finite copy-rule table.  This is
-  stronger and more executable than silently choosing an enumeration from a
-  `Fintype`; a noncomputable adapter may be offered separately.
+- Index copy-rule families directly by the finite nonblank `Symbol` type.  The
+  executable target machine takes an explicit equivalence from the complete
+  proof-facing `TableRuleId` carrier to `Fin ruleCount`; a noncomputable
+  `Fintype.equivFin` convenience adapter is separate.
 - Keep a proof-facing finite rule-tag family separate from the transported
   intrinsic-`Fin` `QuadrupleMachine`.  Prove table semantics/non-overlap on tags,
   then transport them through an explicit equivalence.
@@ -73,8 +73,9 @@ and global rule non-overlap.
 - State the central theorem with source determinism/normal form, accepted input,
   all initial/final controls/tapes/heads, input retention, output production,
   history cleanup, both halting directions, and malformed-input scope visible.
-- Add an end-to-end finite micro-machine audit.  Defer only syntax/time/space
-  totals owned by Stage 7, while preserving exact traces needed to prove them.
+- Add an end-to-end finite micro-machine audit.  Prove syntax and time totals
+  directly from the already constructed carriers/schedules; defer only the
+  distinct visited/nonblank/active-cell derivations to Stage 7.
 
 ## Build Structure
 
@@ -155,7 +156,15 @@ and global rule non-overlap.
   output, blank history, exact time `4v+4λ+5`, relational determinism, and
   executable-step reversibility.  `terminates_iff_source` proves both halting
   directions on accepted standard inputs.
+- `Control.source?` and `logicalControl_restored` make the corrected logical
+  control equality explicit while retaining the physically distinct `A₁` and
+  `C₁` controls in the endpoint certificate.
 - Malformed physical configurations remain executable but are intentionally
   outside the central theorem.  Divergence preservation proves that no such
   premature halt is reachable from a standard initial configuration while the
   source continues.
+- `Simulator.Audit` instantiates a three-rule source and the full 19-rule target,
+  proves its empty-word computation takes 3 source and 17 target transitions,
+  and instantiates global syntactic reversibility.  Focused audit and public
+  API/root builds pass.  Principal `#print axioms` checks report only
+  `propext`, `Classical.choice`, and `Quot.sound`.

@@ -63,7 +63,21 @@ ambiguous tape-1 equality with the strongest exact measured result.
 - Collect the verified syntax/time/space facts in a reusable resource
   certificate and export it through the simulator API.
 
-## No-Cheating Checks
+## Build Structure
+
+- `formal/Bennett/Turing/Simulator/Resource.lean`: proof leaf for explicit
+  schedule traces, phase projections, exact tape measures, and the resource
+  certificate.  It imports the stable simulator schedule leaves but is not an
+  execution dependency of `Correctness`.
+- `formal/Bennett/Turing/Simulator/ResourceAudit.lean` if exhaustive examples
+  or `#print axioms` would otherwise burden the public proof leaf.
+- `formal/Bennett/Turing/Simulator/API.lean`: add the new resource leaf only
+  after its focused build is stable.
+- Focused build: `cd formal && lake build Bennett.Turing.Simulator.Resource`.
+  Adjacent builds: simulator API, Turing API, root `Bennett`, and the relevant
+  audit leaf after public export.
+
+## Boundary Checks
 
 - Do not infer a visited set from endpoints or transition count.
 - Do not identify visited blanks with nonblank support.

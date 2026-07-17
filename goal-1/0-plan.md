@@ -272,7 +272,7 @@ inspection” local argument with proofs.
 
 ### 6-THREE-TAPE — Bennett simulator and central semantic theorem
 
-**Status:** In progress (mathematical core complete; final audit/example foldback).
+**Status:** Completed.
 
 #### Big Picture Objective
 
@@ -304,7 +304,7 @@ compute-copy-uncompute behavior.
 
 ### 7-RESOURCES — Exact syntax, time, and space accounting
 
-**Status:** Pending.
+**Status:** In progress.
 
 #### Big Picture Objective
 
