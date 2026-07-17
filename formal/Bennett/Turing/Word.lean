@@ -1,6 +1,7 @@
 import Bennett.Turing.Tape
 import Lean.Elab.Tactic.Omega
 import Mathlib.Data.Int.Basic
+import Mathlib.Data.Int.Interval
 
 /-!
 # Standard finite words on a tape
@@ -96,6 +97,26 @@ theorem cellsFrom_right_blank (word : List Symbol) (start : Int) :
   rw [cellsFrom_at_nat]
   simp
 
+/-- Exact nonblank interval occupied by a represented word. -/
+theorem support_cellsFrom (word : List Symbol) (start : Int) :
+    (cellsFrom word start).support =
+      Finset.Ico start (start + (word.length : Int)) := by
+  induction word generalizing start with
+  | nil => simp [cellsFrom]
+  | cons symbol rest ih =>
+      rw [cellsFrom, CellStore.support_set_nonblank, ih]
+      ext position
+      simp only [Finset.mem_insert, Finset.mem_Ico, List.length_cons,
+        Int.natCast_succ]
+      constructor
+      · rintro (rfl | ⟨hl, hr⟩)
+        · omega
+        · omega
+      · rintro ⟨hl, hr⟩
+        by_cases h : position = start
+        · exact Or.inl h
+        · exact Or.inr (by omega)
+
 /-- A represented word has exactly one nonblank support cell per list entry. -/
 theorem support_card_cellsFrom (word : List Symbol) (start : Int) :
     (cellsFrom word start).support.card = word.length := by
@@ -126,6 +147,25 @@ theorem support_card_cellsFrom (word : List Symbol) (start : Int) :
 @[simp] theorem ofWord_nonblank_card (word : List Symbol) :
     (ofWord word).nonblankPositions.card = word.length :=
   support_card_cellsFrom word 0
+
+theorem ofWord_nonblankPositions (word : List Symbol) :
+    (ofWord word).nonblankPositions =
+      Finset.Ico 0 (word.length : Int) := by
+  simpa [ofWord, ofWordAt, nonblankPositions] using support_cellsFrom word 0
+
+/-- The canonical standard-tape encoding uniquely determines its word. -/
+theorem ofWord_injective : Function.Injective (@ofWord Symbol) := by
+  intro first second htape
+  have hlength : first.length = second.length := by
+    have hsupport := congrArg (fun tape => tape.nonblankPositions.card) htape
+    simpa using hsupport
+  apply List.ext_getElem hlength
+  intro n hfirst hsecond
+  have hcell := congrArg (fun tape => tape.cells (n : Int)) htape
+  change cellsFrom first 0 (n : Int) = cellsFrom second 0 (n : Int) at hcell
+  have hposition : (n : Int) = 0 + (n : Int) := by omega
+  rw [hposition, cellsFrom_at_nat, cellsFrom_at_nat] at hcell
+  simpa [hfirst, hsecond] using hcell
 
 /-- Empty words are represented, explicitly, by a blank tape at head `-1`. -/
 @[simp] theorem ofWord_nil :

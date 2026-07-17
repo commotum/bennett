@@ -85,6 +85,27 @@ theorem support_set_nonblank {Symbol : Type*}
       insert position cells.support :=
   rfl
 
+@[simp]
+theorem set_current {Symbol : Type*} (cells : Int →₀ TapeSymbol Symbol)
+    (position : Int) :
+    set cells position (cells position) = cells := by
+  ext index
+  by_cases hindex : index = position
+  · subst index
+    simp
+  · simp [hindex]
+
+@[simp]
+theorem set_set {Symbol : Type*} (cells : Int →₀ TapeSymbol Symbol)
+    (position : Int) (first second : TapeSymbol Symbol) :
+    set (set cells position first) position second =
+      set cells position second := by
+  ext index
+  by_cases hindex : index = position
+  · subst index
+    simp
+  · simp [hindex]
+
 end CellStore
 
 /-- A canonical finite-nonblank tape with an absolute integer head position. -/
@@ -144,6 +165,17 @@ def activePositions (tape : Tape Symbol) : Finset Int :=
 @[simp] theorem read_write (tape : Tape Symbol) (value : TapeSymbol Symbol) :
     (tape.write value).read = value := by
   simp [read, write]
+
+@[simp] theorem write_read (tape : Tape Symbol) :
+    tape.write tape.read = tape := by
+  cases tape
+  simp [write, read]
+
+@[simp] theorem write_write (tape : Tape Symbol)
+    (first second : TapeSymbol Symbol) :
+    (tape.write first).write second = tape.write second := by
+  cases tape
+  simp [write]
 
 @[simp] theorem write_cells_same (tape : Tape Symbol)
     (value : TapeSymbol Symbol) :
