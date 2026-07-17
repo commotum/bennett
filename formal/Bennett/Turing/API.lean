@@ -1,3 +1,4 @@
+import Bennett.Turing.Quadruple.API
 import Bennett.Turing.Resource
 import Bennett.Turing.Source.Standard
 
@@ -5,6 +6,7 @@ import Bennett.Turing.Source.Standard
 # Turing-machine public API
 
 Stable re-export for canonical two-way tapes, standard words, executable
-quintuple machines, syntactic determinism, standard behavior, exact traces, and
-separated resource measures.  Executable diagnostics remain in `Turing.Audit`.
+quintuple machines, typed heterogeneous quadruples and their inverses, overlap
+criteria, fresh-state source splitting, standard behavior, exact traces, and
+separated resource measures.  Executable diagnostics remain in audit leaves.
 -/

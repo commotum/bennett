@@ -378,6 +378,33 @@ theorem splitRule_ranges_disjoint_of_target_injective
           have hid := htarget htargetEq
           exact hne (congrArg Sum.inr hid)
 
+/-- Conversely, range-disjoint pure splitting forces source targets to identify rules. -/
+theorem target_injective_of_splitRule_ranges_disjoint
+    (source : Machine Control (TargetSymbol work))
+    (hdisjoint : ∀ {first second : SplitRuleId source}, first ≠ second →
+      ¬(splitRule work source first).RangesOverlap
+        (splitRule work source second)) :
+    Function.Injective fun ruleId : source.RuleId =>
+      (source.rule ruleId).target := by
+  intro first second htarget
+  by_contra hne
+  apply hdisjoint (first := Sum.inr first) (second := Sum.inr second)
+  · intro heq
+    exact hne (Sum.inr_injective heq)
+  · exact (SourceSplit.moveHalf_rangesOverlap_iff_target_eq
+      work first second (source.rule first) (source.rule second)).2 htarget
+
+/-- Exact criterion: splitting alone is range-disjoint iff source targets are injective. -/
+theorem splitRule_ranges_disjoint_iff_target_injective
+    (source : Machine Control (TargetSymbol work)) :
+    (∀ {first second : SplitRuleId source}, first ≠ second →
+      ¬(splitRule work source first).RangesOverlap
+        (splitRule work source second)) ↔
+      Function.Injective fun ruleId : source.RuleId =>
+        (source.rule ruleId).target :=
+  ⟨target_injective_of_splitRule_ranges_disjoint source,
+    splitRule_ranges_disjoint_of_target_injective source⟩
+
 /-- Intrinsic `Fin (N+N)` table containing all write halves then all move halves. -/
 def splitMachine (work : TapeIndex)
     (source : Machine Control (TargetSymbol work)) :

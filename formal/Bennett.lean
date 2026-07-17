@@ -10,5 +10,6 @@ import Bennett.Uncompute.API
 Public root for the verified reversible-computation library.  It exports the
 deterministic partial-transition, recorded-history, blank-target copying, and
 compute-copy-uncompute APIs together with executable source Turing-machine
-semantics.  Diagnostic examples remain in their audit leaves.
+semantics and reversible heterogeneous quadruple syntax.  Diagnostic examples
+remain in their audit leaves.
 -/
