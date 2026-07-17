@@ -160,7 +160,9 @@ it does not license silently using the proposed repair.
   while making later reachable-input theorems honest.
 - **Consequences:** Stages 2 and 5 own distinct APIs; Stage 6 reports both global
   constructed-machine properties and standard-run correctness where proved.
-- **Status:** Open (Stages 2, 5, and 6).
+- **Status:** Semantic distinction formalized in Stage 2 (`PartialStep.Graph`,
+  `GraphOn`, `Reversible`, `ReversibleOn`, and Relator bridges); syntactic
+  sufficiency/concrete application remain open for Stages 5–6.
 
 ## C-009 — Table 1 does not restore the literal whole-machine state
 
@@ -179,7 +181,9 @@ it does not license silently using the proposed repair.
 - **Consequences:** the central theorem cannot assert raw initial/final
   configuration equality; control-phase renaming remains observable in the
   syntactic machine and in exact state counts.
-- **Status:** Open (Stages 2 and 6).
+- **Status:** Stage 2's abstract `HistoryRecorder.trace_cleanup` proves literal
+  restoration on a single state carrier.  The concrete `A₁`/`C₁` projection
+  remains open for Stage 6.
 
 ## C-010 — Reversible stages do not automatically form a reversible union
 
@@ -195,7 +199,9 @@ it does not license silently using the proposed repair.
   partial injections.
 - **Consequences:** Stage 3 exposes composition premises; Stage 6 proves boundary
   separation rather than citing per-stage reversibility alone.
-- **Status:** Open.
+- **Status:** Stage 2 packages one-step converse graphs as mathlib `PEquiv` and
+  proves exact inverse iteration.  Cross-stage composition remains open for
+  Stages 3 and 6.
 
 ## C-011 — Extensional “only if” inverse tests need nondegeneracy
 

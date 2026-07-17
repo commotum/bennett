@@ -61,17 +61,22 @@ excluded rather than silently weakened.
 - Table 1 begins in `A₁` and ends in distinct `C₁`; concrete cleanup restores
   tapes and heads exactly but restores control only through a phase-forgetting
   correspondence.
+- Stage 2 now exposes executable `PartialStep`, exact `Runs`/halting, mathlib
+  reachability/evaluator bridges, global and reachable-set reversibility,
+  two-sided `PEquiv` history instrumentation, exact reverse cleanup, and
+  same-step termination/divergence correspondence.
 - The paper's segmented-history and physical sections are downstream of the
   main semantic theorem and are not prerequisites for it.
 
 ## Working Assumptions to Test
 
-- A deterministic partial step represented as `Config → Option Config` is a
-  suitable low-level semantic interface, with reversibility represented by a
-  partial inverse law rather than total bijectivity.
-- A history entry should store enough local information to recover a predecessor;
-  for a syntactic machine, a rule identifier plus the target configuration's
-  observable data may suffice, but this must be proved for the chosen model.
+- `Config → Option Config` is the selected executable one-step interface.
+  Mathlib `StateTransition.Reaches` and `eval` supply reachability and divergent
+  whole-computation semantics; mathlib `PEquiv` packages executable partial
+  inverse pairs.
+- A concrete history entry must store enough local information to recover a
+  predecessor.  `HistoryRecorder` makes instrumentation, forgetting, and both
+  recovery graph laws explicit; later rule IDs must discharge those laws.
 - A finite-support or zipper-style tape can give executable semantics and useful
   visited-cell accounting without importing excessive computability machinery.
 - The strongest clean abstract history theorem may use a supplied encoding of
@@ -141,7 +146,7 @@ skeleton, and narrow module layout needed for fast trustworthy Lean work.
 
 ### 2-PARTIAL-SYSTEMS — Determinism, partial inverses, histories, and runs
 
-**Status:** Pending.
+**Status:** Completed.
 
 #### Big Picture Objective
 

@@ -32,11 +32,17 @@ fits the required semantics.
   compute the same successor/predecessor.
 - **Selected:** global injectivity and injectivity restricted to a well-formed or
   reachable set are separate predicates and may not be substituted silently.
-- **Owned by Stage 2:** the concrete Lean carrier for partial steps.  The leading
-  candidate is `Config → Option Config`; mathlib's `PFun` is imported for API
-  comparison, not preselected as the runtime representation.
-- **Owned by Stage 2:** finite-run and halting representation, including whether
-  an explicit trace or an iterated partial step is primary.
+- **Selected and formalized in Stage 2:** executable one-step semantics use
+  `PartialStep α := α → Option α`.  Mathlib `PFun`/`Part` remain the
+  potentially divergent whole-computation layer through
+  `StateTransition.eval`; they are not the runtime one-step representation.
+- **Selected and formalized in Stage 2:** `PartialStep.iterate` executes exactly
+  `n` successful steps, `Runs` records exact endpoints/count, and `HaltsIn n`
+  means `n` successful transitions followed by an undefined next step.  This
+  avoids counting the final failed halt query as a machine transition.
+- **Selected and formalized in Stage 2:** reflexive-transitive reachability is
+  mathlib `StateTransition.Reaches`; exact runs and termination are bridged to
+  `StateTransition.eval` in a proof leaf.
 
 ## History and Uncomputation
 
@@ -53,6 +59,11 @@ fits the required semantics.
   named in the central theorem.
 - **Selected:** compute-copy-uncompute retains the original input unless an
   independently reversible recovery procedure is supplied.
+- **Selected and formalized in Stage 2:** `HistoryRecorder` exposes an executable
+  `stepWithRecord`, source-forgetting law, recovery function, and both graph
+  inverse laws.  It assumes no compactness of records.  Its lifted steps form a
+  mathlib `PEquiv`, add exactly one list entry per source step, reject malformed
+  records, and reverse any finite generated run exactly.
 
 ## Copying
 
