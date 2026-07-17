@@ -175,7 +175,7 @@ transition systems.
 
 ### 3-UNCOMPUTE — Reusable compute-copy-uncompute construction
 
-**Status:** Pending.
+**Status:** Completed.
 
 #### Big Picture Objective
 

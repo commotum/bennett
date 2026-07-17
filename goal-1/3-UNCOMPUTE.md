@@ -1,5 +1,7 @@
 # 3-UNCOMPUTE
 
+**Status:** Completed on 2026-07-17.
+
 ## Current Facts
 
 - Stage 2 provides executable `PartialStep`, exact finite runs, two-way
@@ -98,4 +100,64 @@ halting preconditions.
 
 ## Stage Results
 
-- In progress.
+- Added `Bennett.Copy.Core` with executable `blankForward`/`blankBackward`,
+  `blankEquiv`, retained-work `observedEquiv`, and exact forward/inverse domain
+  laws.  Copying is explicitly partial on the known-blank/equal-copy invariants.
+- Proved `Copy.injective_of_reversible_outputOnly`: a globally reversible
+  fixed-ancilla output-only realization forces the computed function to be
+  injective.  This formalizes why general reversible computation retains input
+  or equivalent recovery information.
+- Added diagnostic `Bennett.Copy.Audit`: destructive overwrite is noninjective,
+  its successful graph is not reversible on any target type with two distinct
+  values, and it has no graph inverse.
+- Added `Bennett.Uncompute.Core` with `liftRight`, executable halt guards,
+  fixed-length `recordedEquivAt`, and `computeCopyUncompute`.  The construction
+  is the semantic composition `Fₙ ; haltGuard ; observedCopy ; Fₙ⁻¹` packaged as
+  a mathlib `PEquiv`.
+- Added `Bennett.Uncompute.Correctness`.  Principal results are:
+  - `exists_stages_of_run`, exposing `n` forward steps, history growth by `n`,
+    the halt check, one successful copy, and `n` backward cleanup steps;
+  - `computeCopyUncompute_apply_of_run_halted`, restoring the exact input and
+    arbitrary initial-history suffix while leaving `observe after`;
+  - `computeCopyUncompute_symm_apply_of_run_halted`, verifying/removing the
+    copied observation and restoring the target blank;
+  - `computeCopyUncompute_succeeds_iff_blank_and_haltsIn`, making target
+    blankness and exact halting necessary and sufficient;
+  - `computeCopyUncompute_eq_some_iff`, the exact retained-input/output/history
+    characterization;
+  - `exists_computeCopyUncompute_iff_terminates`, the two-way existential
+    halting correspondence; and
+  - `computeCopyUncompute_reversible`, global reversibility of the semantic
+    entry-to-exit macro.
+- Added stable `Copy.API` and `Uncompute.API` leaves and re-exported both from
+  `Bennett.lean`; diagnostic leaves remain outside the public import graph.
+- Added executable list-head-erasure examples.  They compute, copy a terminal
+  observation, restore the source/history, run the inverse, reject a nonblank
+  target, and reject an invalid inverse output by kernel reduction (`rfl`).
+- Scope boundary: the exact count `n` is external.  Existence over `n` is a
+  logical termination equivalence, not an executable search.  `PEquiv.trans`
+  proves sequential macro composition, not non-overlap of a concrete union of
+  phase rules.  No target transition, state, rule, or tape-space count is
+  inferred.  Autonomous scheduling and Table 1 junction proofs remain Stage 6.
+- Arbitrary initial-history suffix preservation relies on reversing exactly
+  `n` steps.  A future autonomous reverse phase needs an empty history,
+  baseline marker, or an independently proved backward boundary.
+- Verification passed:
+
+  ```text
+  lake build Bennett.Copy.Core
+  lake build Bennett.Copy.Audit
+  lake build Bennett.Copy.API
+  lake build Bennett.Uncompute.Core
+  lake build Bennett.Uncompute.Correctness
+  lake build Bennett.Uncompute.Audit
+  lake build Bennett.Uncompute.API
+  lake build Bennett
+  lake build
+  ```
+
+- Principal axiom audit reports only Lean/mathlib foundations.  Copy partial
+  equivalences use `[propext]`; endpoint and macro-reversibility results use
+  `[propext, Quot.sound]`; exact-result/termination characterizations also use
+  `Classical.choice` through the mathlib `PEquiv.ofSet` guard surface.  No
+  project-specific axiom, `sorry`, or `admit` was introduced.

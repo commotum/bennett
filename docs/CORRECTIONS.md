@@ -112,7 +112,9 @@ it does not license silently using the proposed repair.
   from the duplicate; without equality it does not.
 - **Consequences:** any Table 2 theorem depends on Stage 3's copy partial inverse
   and on `S₂` computing the original input from the output.
-- **Status:** Open (Stage 3 and post-Stage 6 composition).
+- **Status:** The abstract blank-copy/equality-checked inverse is formalized in
+  Stage 3 (`Copy.blankEquiv` and `observedEquiv`).  The standard-tape copy loop,
+  head-format invariant, and full Table 2 composition remain open after Stage 6.
 
 ## C-007 — Segmented optimum is continuous and omits costs
 
@@ -192,16 +194,20 @@ it does not license silently using the proposed repair.
   because each of its stages is.
 - **Issue:** unions/compositions of individually reversible partial rule families
   can acquire overlapping domains or ranges at their junctions.
-- **Corrected formulation:** an abstract staged construction uses disjoint phase
-  tags or explicit cross-stage domain/range hypotheses.  The concrete Table 1
-  proof checks the `A_f→B` and `B→C_f` bridges against every stage family.
+- **Corrected formulation:** sequential stages may be composed as a semantic
+  partial equivalence.  A concrete one-step machine instead needs a scheduler
+  plus explicit cross-stage domain/range separation; broad phase labels alone
+  do not prove it.  The Table 1 proof must check the `A_f→B` and `B→C_f`
+  bridges against every stage family.
 - **Justification:** injectivity is not preserved by an unqualified union of
   partial injections.
-- **Consequences:** Stage 3 exposes composition premises; Stage 6 proves boundary
-  separation rather than citing per-stage reversibility alone.
-- **Status:** Stage 2 packages one-step converse graphs as mathlib `PEquiv` and
-  proves exact inverse iteration.  Cross-stage composition remains open for
-  Stages 3 and 6.
+- **Consequences:** Stage 3's fixed-`n` macro proves an injective entry-to-exit
+  relation but deliberately makes no statement about a union of one-step phase
+  rules or its transition count.  Stage 6 proves boundary separation rather
+  than citing macro composition or per-stage reversibility alone.
+- **Status:** Sequential semantic composition is formalized in Stage 3 as
+  `Uncompute.computeCopyUncompute` with global macro reversibility.  Autonomous
+  scheduling and concrete cross-family non-overlap remain open for Stage 6.
 
 ## C-011 — Extensional “only if” inverse tests need nondegeneracy
 
