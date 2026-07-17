@@ -256,7 +256,7 @@ theorem forward_scheduled_of_run
           htailScheduled, htailOnly⟩ := ih (ruleId :: history) htail
       refine ⟨finalHistory, forwardPairRules source ruleId ++ tailRules,
         ?_, ?_, ?_, ?_⟩
-      · simp [hhistory, Nat.add_assoc, Nat.add_comm, Nat.add_left_comm]
+      · simp [hhistory, Nat.add_comm, Nat.add_left_comm]
       · simp [htailLength, forwardPairRules]
         omega
       · exact Quadruple.Scheduled.append

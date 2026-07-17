@@ -33,6 +33,12 @@ def reverseRestoreRule (source : Machine SourceControl Symbol)
     (.move .left)
     (.rewrite .blank .blank)
 
+/-- Proof-facing dispatch for the complete retrace rule family. -/
+def reverseRule (source : Machine SourceControl Symbol) :
+    ReverseRuleId source.RuleId → Rule source
+  | .eraseRecordMove ruleId => reverseEraseRule source ruleId
+  | .restoreSymbol ruleId => reverseRestoreRule source ruleId
+
 /-- Exact configuration between the two reverse simulator rules. -/
 def reverseMiddle (source : Machine SourceControl Symbol)
     (ruleId : source.RuleId)
@@ -151,6 +157,58 @@ theorem reverse_two_steps
           houtput,
         reverseRestoreRule_execute source ruleId before history copiedOutput
           hmatches houtput⟩
+
+/-- The displayed two-rule cleanup schedule for one recorded source step. -/
+def reversePairRules (source : Machine SourceControl Symbol)
+    (ruleId : source.RuleId) : List (Rule source) :=
+  [reverseEraseRule source ruleId, reverseRestoreRule source ruleId]
+
+theorem reversePair_scheduled (source : Machine SourceControl Symbol)
+    (ruleId : source.RuleId)
+    (before : Bennett.Turing.Configuration SourceControl Symbol)
+    (history : List source.RuleId) (copiedOutput : Tape Symbol)
+    (hmatches : (source.rule ruleId).Matches before)
+    (houtput : copiedOutput.read = .blank) :
+    Quadruple.Scheduled (reversePairRules source ruleId)
+      (reverseConfiguration source
+        { current := (source.rule ruleId).execute before
+          history := ruleId :: history }
+        copiedOutput)
+      (reverseConfiguration source
+        { current := before, history := history } copiedOutput) := by
+  simp only [reversePairRules, Quadruple.Scheduled]
+  refine ⟨reverseEraseRule_matches source ruleId before history copiedOutput, ?_⟩
+  rw [reverseEraseRule_execute source ruleId before history copiedOutput]
+  exact ⟨reverseRestoreRule_matches source ruleId before history copiedOutput
+      houtput,
+    reverseRestoreRule_execute source ruleId before history copiedOutput
+      hmatches houtput⟩
+
+/-- Every displayed rule belongs to the retrace family of `source`. -/
+def OnlyReverseRules (source : Machine SourceControl Symbol)
+    (rules : List (Rule source)) : Prop :=
+  ∀ rule, rule ∈ rules →
+    ∃ ruleId : ReverseRuleId source.RuleId, reverseRule source ruleId = rule
+
+theorem onlyReverseRules_pair (source : Machine SourceControl Symbol)
+    (ruleId : source.RuleId) :
+    OnlyReverseRules source (reversePairRules source ruleId) := by
+  intro rule hmem
+  simp only [reversePairRules, List.mem_cons, List.not_mem_nil, or_false] at hmem
+  rcases hmem with herase | hrestore
+  · exact ⟨ReverseRuleId.eraseRecordMove ruleId, by
+      simpa [reverseRule] using herase.symm⟩
+  · exact ⟨ReverseRuleId.restoreSymbol ruleId, by
+      simpa [reverseRule] using hrestore.symm⟩
+
+theorem OnlyReverseRules.append (source : Machine SourceControl Symbol)
+    {first second : List (Rule source)}
+    (hfirst : OnlyReverseRules source first)
+    (hsecond : OnlyReverseRules source second) :
+    OnlyReverseRules source (first ++ second) := by
+  intro rule hmem
+  rw [List.mem_append] at hmem
+  exact hmem.elim (hfirst rule) (hsecond rule)
 
 /-- Reverse erasure uses exactly the inverse tape actions of forward recording. -/
 theorem reverseEraseRule_action (source : Machine SourceControl Symbol)

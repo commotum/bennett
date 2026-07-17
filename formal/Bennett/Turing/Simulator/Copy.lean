@@ -627,7 +627,8 @@ theorem eq_of_domainsOverlap {source : Machine SourceControl Symbol}
       Action.DomainCompatible]
   all_goals
     have hwork := hcompatible .work
-    simpa [rule, threeRule, Action.DomainCompatible] using hwork
+    simp at hwork
+    try exact TapeSymbol.mark.inj hwork
 
 theorem eq_of_rangesOverlap {source : Machine SourceControl Symbol}
     (normal : Standard.BennettNormalForm source)
@@ -641,7 +642,8 @@ theorem eq_of_rangesOverlap {source : Machine SourceControl Symbol}
       Action.RangeCompatible]
   all_goals
     have hwork := hcompatible .work
-    simpa [rule, threeRule, Action.RangeCompatible] using hwork
+    simp at hwork
+    try exact TapeSymbol.mark.inj hwork
 
 example {source : Machine SourceControl Symbol}
     (normal : Standard.BennettNormalForm source) :
