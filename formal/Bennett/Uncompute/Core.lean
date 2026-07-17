@@ -55,6 +55,18 @@ theorem liftRight_symm_apply (equiv : Left ≃. Right) (Register : Type*)
 def guard (accept : Left → Bool) : Left ≃. Left :=
   PEquiv.ofSet {state | accept state = true}
 
+theorem guard_eq_some_iff (accept : Left → Bool) (state output : Left) :
+    guard accept state = some output ↔
+      accept state = true ∧ output = state := by
+  change
+    PEquiv.ofSet {state | accept state = true} state = some output ↔ _
+  rw [PEquiv.ofSet_eq_some_iff]
+  constructor
+  · rintro ⟨rfl, haccept⟩
+    exact ⟨haccept, rfl⟩
+  · rintro ⟨haccept, rfl⟩
+    exact ⟨rfl, haccept⟩
+
 /-- A Boolean guard accepting exactly halted source configurations. -/
 def haltGuard (step : PartialStep α) (Record : Type*) :
     HistoryState α Record ≃. HistoryState α Record :=
@@ -65,6 +77,16 @@ theorem haltGuard_apply_iff (step : PartialStep α) (Record : Type*)
     (state : HistoryState α Record) :
     haltGuard step Record state = some state ↔ step.Halted state.current := by
   simp [haltGuard, guard, PEquiv.ofSet, PartialStep.Halted]
+
+theorem haltGuard_eq_some_iff (step : PartialStep α) (Record : Type*)
+    (state output : HistoryState α Record) :
+    haltGuard step Record state = some output ↔
+      step.Halted state.current ∧ output = state := by
+  change
+    guard (fun state : HistoryState α Record =>
+      (step state.current).isNone) state = some output ↔ _
+  rw [guard_eq_some_iff]
+  simp [PartialStep.Halted]
 
 /-- The exact `n`-step recorded execution as a partial equivalence. -/
 def recordedEquivAt {step : PartialStep α}
