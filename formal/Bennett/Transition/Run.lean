@@ -5,7 +5,7 @@ import Bennett.Transition.Core
 
 `PartialStep.iterate step n start` executes exactly `n` successful transitions,
 returning `none` if any required step is unavailable.  This file supplies exact
-finite runs, reachability, termination, composition, and generic reversal by a
+finite runs, termination, composition, and generic reversal by a
 specified inverse step.
 -/
 
@@ -50,14 +50,6 @@ theorem iterate_succ_last (step : PartialStep α) (n : Nat) (state : α) :
 def Runs (step : PartialStep α) (n : Nat) (start finish : α) : Prop :=
   step.iterate n start = some finish
 
-/-- Reachability by some finite number of successful transitions. -/
-def ReachableFrom (step : PartialStep α) (start finish : α) : Prop :=
-  ∃ n, step.Runs n start finish
-
-/-- The set of configurations reachable from `start`. -/
-def reachableSet (step : PartialStep α) (start : α) : Set α :=
-  {finish | step.ReachableFrom start finish}
-
 /-- Halt after exactly `n` successful transitions. -/
 def HaltsIn (step : PartialStep α) (n : Nat) (start : α) : Prop :=
   ∃ finish, step.Runs n start finish ∧ step.Halted finish
@@ -99,25 +91,6 @@ theorem runs_deterministic {step : PartialStep α} {n : Nat} {start finish₁ fi
     (h₁ : step.Runs n start finish₁) (h₂ : step.Runs n start finish₂) :
     finish₁ = finish₂ :=
   Option.some.inj (h₁.symm.trans h₂)
-
-theorem reachable_refl (step : PartialStep α) (state : α) :
-    step.ReachableFrom state state :=
-  ⟨0, step.runs_refl state⟩
-
-theorem ReachableFrom.step {step : PartialStep α} {initial before after : α}
-    (hreach : step.ReachableFrom initial before) (hstep : step before = some after) :
-    step.ReachableFrom initial after := by
-  obtain ⟨n, hn⟩ := hreach
-  exact ⟨n + 1, runs_trans hn (runs_one hstep)⟩
-
-theorem reachableSet_initial (step : PartialStep α) (initial : α) :
-    initial ∈ step.reachableSet initial :=
-  step.reachable_refl initial
-
-theorem reachableSet_step {step : PartialStep α} {initial before after : α}
-    (hbefore : before ∈ step.reachableSet initial) (hstep : step before = some after) :
-    after ∈ step.reachableSet initial :=
-  ReachableFrom.step hbefore hstep
 
 /-- Every finite forward iteration reverses under a graph inverse. -/
 theorem AreInverses.reverse_iterate {forward backward : PartialStep α}
