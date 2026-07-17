@@ -188,5 +188,45 @@ theorem tableRuleId_card_fullAlphabet
         2 * Fintype.card (TapeSymbol Symbol) + 3 := by
   simp
 
+@[simp] theorem tapeId_card : Fintype.card TapeId = 3 := by
+  decide
+
+/-- Work and output use the source full alphabet: nonblank letters plus blank. -/
+@[simp] theorem workAlphabet_card [Fintype Symbol]
+    (source : Machine SourceControl Symbol) :
+    Fintype.card (TapeSymbol (TapeAlphabet source .work)) =
+      Fintype.card Symbol + 1 := by
+  change Fintype.card (TapeSymbol Symbol) = Fintype.card Symbol + 1
+  exact TapeSymbol.card
+
+/-- The history full alphabet consists of `N` rule IDs plus blank. -/
+@[simp] theorem historyAlphabet_card [Fintype Symbol]
+    (source : Machine SourceControl Symbol) :
+    Fintype.card (TapeSymbol (TapeAlphabet source .history)) =
+      source.ruleCount + 1 := by
+  change Fintype.card (TapeSymbol source.RuleId) = source.ruleCount + 1
+  rw [TapeSymbol.card, Machine.ruleId_card]
+
+@[simp] theorem outputAlphabet_card [Fintype Symbol]
+    (source : Machine SourceControl Symbol) :
+    Fintype.card (TapeSymbol (TapeAlphabet source .output)) =
+      Fintype.card Symbol + 1 := by
+  change Fintype.card (TapeSymbol Symbol) = Fintype.card Symbol + 1
+  exact TapeSymbol.card
+
+/-- Exact control-state count specialized to a source machine with `N` rules. -/
+@[simp] theorem simulatorControl_card [Fintype SourceControl]
+    (source : Machine SourceControl Symbol) :
+    Fintype.card (Control SourceControl source.RuleId) =
+      2 * Fintype.card SourceControl + 2 * source.ruleCount + 4 := by
+  simp
+
+/-- Exact rule count specialized to a source machine with `N` rules. -/
+@[simp] theorem sourceTableRuleId_card [Fintype Symbol]
+    (source : Machine SourceControl Symbol) :
+    Fintype.card (TableRuleId source.RuleId Symbol) =
+      4 * source.ruleCount + 2 * (Fintype.card Symbol + 1) + 3 := by
+  simp
+
 end Simulator
 end Bennett.Turing

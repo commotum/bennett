@@ -44,6 +44,17 @@ instance {SourceControl Symbol : Type} [DecidableEq Symbol]
   · change DecidableEq Symbol
     infer_instance
 
+instance {SourceControl Symbol : Type} [Fintype Symbol]
+    (source : Machine SourceControl Symbol)
+    (index : TapeId) : Fintype (TapeAlphabet source index) := by
+  cases index
+  · change Fintype Symbol
+    infer_instance
+  · change Fintype source.RuleId
+    infer_instance
+  · change Fintype Symbol
+    infer_instance
+
 /-- Disjoint `A`, four-state `B`, and `C` control families. -/
 inductive Control (SourceControl RuleId : Type) where
   | forward (control : SourceControl)

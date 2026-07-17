@@ -1,4 +1,5 @@
-import Bennett.Turing.Simulator.Core
+import Bennett.Turing.Quadruple.Schedule
+import Bennett.Turing.Simulator.Syntax
 
 /-!
 # Exact forward simulation rules
@@ -14,6 +15,12 @@ namespace Bennett.Turing
 namespace Simulator
 
 variable {SourceControl Symbol : Type}
+
+/-- Proof-facing dispatch for the complete forward rule family. -/
+def forwardRule (source : Machine SourceControl Symbol) :
+    ForwardRuleId source.RuleId → Rule source
+  | .rewrite ruleId => forwardRewriteRule source ruleId
+  | .moveRecord ruleId => forwardRecordRule source ruleId
 
 /-- First half of the forward simulation of a named source quintuple. -/
 def forwardRewriteRule (source : Machine SourceControl Symbol)
