@@ -8,3 +8,6 @@ wheels/
 
 # Virtual environments
 .venv
+
+# Lean/Lake build artifacts and downloaded dependencies
+formal/.lake/
