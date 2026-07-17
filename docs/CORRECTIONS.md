@@ -19,10 +19,13 @@ it does not license silently using the proposed repair.
 - **Justification:** a shift action is a bijection on tape/head states and has
   unrestricted range; a write-without-move action restricts the scanned final
   symbol to the value it wrote.
-- **Consequences:** Stage 5 will use a typed sum of `write` and `move` actions,
-  making the invalid expression unrepresentable, and prove the repaired iff.
-- **Status:** Open proof obligation (Stage 5); identified as Markdown conversion
-  error rather than a mathematical error in the scan.
+- **Consequences:** Stage 5 uses the typed constructors `Action.rewrite` and
+  `Action.move`, making the invalid expression unrepresentable.
+- **Status:** Corrected and formalized in Stage 5.  The semantic-first theorem
+  `Quadruple.rangesOverlap_iff_rangeCompatible` proves the repaired iff;
+  `domainsOverlap_iff_domainCompatible` proves the analogous domain formula.
+  This remains classified as a Markdown conversion error, not an error in the
+  scanned paper.
 
 ## C-002 — “Appear in no other quintuple” needs directional precision
 
@@ -174,9 +177,14 @@ it does not license silently using the proposed repair.
   while making later reachable-input theorems honest.
 - **Consequences:** Stages 2 and 5 own distinct APIs; Stage 6 reports both global
   constructed-machine properties and standard-run correctness where proved.
-- **Status:** Semantic distinction formalized in Stage 2 (`PartialStep.Graph`,
-  `GraphOn`, `Reversible`, `ReversibleOn`, and Relator bridges); syntactic
-  sufficiency/concrete application remain open for Stages 5–6.
+- **Status:** Corrected and split across Stages 2 and 5.  Stage 5 defines
+  `QuadrupleMachine.DomainsDisjoint`/`RangesDisjoint`, proves relational
+  right/left uniqueness, proves `RangesDisjoint.step_reversible`, and proves
+  that both conditions make the pointwise inverse table an exact partial
+  inverse.  `Quadruple.Audit` also kernel-checks an overlapping two-rule table
+  whose union relation is nevertheless right- and left-unique, demonstrating
+  why the converse is not unconditional.  Concrete Table 1 non-overlap remains
+  Stage 6.
 
 ## C-009 — Table 1 does not restore the literal whole-machine state
 
@@ -239,4 +247,32 @@ it does not license silently using the proposed repair.
   syntax without a separating configuration universe.
 - **Consequences:** Stage 5 prioritizes constructive inverse laws; no unqualified
   necessity theorem is required by the simulator.
-- **Status:** Open (Stage 5).
+- **Status:** Corrected constructive result formalized in Stage 5.
+  `Quadruple.step_areInverses` proves the syntactically constructed inverse has
+  exactly the converse successful graph on the chosen two-way tapes.  The
+  extensional-to-syntactic necessity direction is intentionally not exported
+  without rule-observability/nondegeneracy assumptions.
+
+## C-012 — Fresh split states prevent indeterminacy, not source irreversibility
+
+- **Location:** journal p. 527, equations (3)–(4) and line 74; Table 1 compute
+  stage lines 189–201.
+- **Original claim:** a different connector state must be used for each split
+  quintuple “to avoid introducing indeterminacy.”
+- **Issue:** the sentence is correct about domains, but connector freshness does
+  not separate the ranges of the second (move) halves.  If two source rules
+  have the same target control, their move halves have overlapping ranges.
+- **Corrected formulation:** source key injectivity plus fresh connectors makes
+  the pure split table domain-disjoint.  Its ranges are pairwise disjoint if and
+  only if the map from source rule IDs to target controls is injective.  The
+  later history-record write, not splitting alone, removes this obstruction for
+  a general irreversible source.
+- **Justification:** `SourceSplit.moveHalf_rangesOverlap_iff_target_eq` gives an
+  explicit semantic overlap iff, and
+  `Machine.splitRule_ranges_disjoint_iff_target_injective` lifts it to the full
+  tagged rule family.
+- **Consequences:** Stage 6 must keep the history write in the move half and use
+  its rule-ID symbol to prove range disjointness.  Omitting it would invalidate
+  global reversibility whenever source rules merge into one control state.
+- **Status:** Clarified and formalized in Stage 5; the history-bearing repair is
+  the next Stage 6 construction obligation.

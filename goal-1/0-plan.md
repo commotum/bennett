@@ -67,6 +67,12 @@ excluded rather than silently weakened.
   same-step termination/divergence correspondence.
 - The paper's segmented-history and physical sections are downstream of the
   main semantic theorem and are not prerequisites for it.
+- Stage 5 now exposes heterogeneous multi-tape quadruples, exact formal inverse
+  execution, semantic domain/range overlap iff finite compatibility tests,
+  finite-table non-overlap theorems, the constructive shift/read/write inverse
+  of a source quintuple, and a fresh-state two-rule split.  Pure splitting is
+  range-disjoint exactly when source rule targets are injective, so the Stage 6
+  history write is an essential part of Bennett's general simulator.
 
 ## Working Assumptions to Test
 
@@ -229,7 +235,7 @@ enough for Bennett's construction and resource accounting.
 
 ### 5-QUADRUPLES — Reversible syntax, inverses, overlap, and splitting
 
-**Status:** Pending.
+**Status:** Completed.
 
 #### Big Picture Objective
 

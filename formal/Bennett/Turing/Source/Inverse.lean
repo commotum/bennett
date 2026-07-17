@@ -36,10 +36,10 @@ def undo (rule : Quintuple Control Symbol)
 
 /-- A successful forward endpoint satisfies the exact inverse precondition. -/
 theorem undoMatches_execute {rule : Quintuple Control Symbol}
-    {config : Configuration Control Symbol} (hmatch : rule.Matches config) :
+    {config : Configuration Control Symbol} :
     rule.UndoMatches (rule.execute config) := by
   refine ⟨rfl, ?_⟩
-  simp [UndoMatches, execute, Tape.writeMove]
+  simp [execute, Tape.writeMove]
 
 /-- The shift/read/write inverse exactly restores a successful predecessor. -/
 theorem undo_execute {rule : Quintuple Control Symbol}
@@ -58,7 +58,7 @@ theorem undo_execute {rule : Quintuple Control Symbol}
 
 /-- An inverse-successor reconstructs a configuration matching the forward rule. -/
 theorem matches_undo {rule : Quintuple Control Symbol}
-    {config : Configuration Control Symbol} (hmatch : rule.UndoMatches config) :
+    {config : Configuration Control Symbol} :
     rule.Matches (rule.undo config) := by
   exact ⟨rfl, by simp [undo, Configuration.read]⟩
 
@@ -99,14 +99,14 @@ theorem singleStep_areInverses [DecidableEq Control] [DecidableEq Symbol]
     · intro hstep
       have hafter := Option.some.inj hstep
       subst after
-      simp [undoMatches_execute ‹rule.Matches before›,
+      simp [undoMatches_execute,
         undo_execute ‹rule.Matches before›]
     · simp
   · split
     · intro hstep
       have hbefore := Option.some.inj hstep
       subst before
-      simp [matches_undo ‹rule.UndoMatches after›,
+      simp [matches_undo,
         execute_undo ‹rule.UndoMatches after›]
     · simp
 

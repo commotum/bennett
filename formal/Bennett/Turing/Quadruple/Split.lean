@@ -304,11 +304,13 @@ def splitRule (work : TapeIndex) (source : Machine Control (TargetSymbol work)) 
   | .inr ruleId =>
       SourceSplit.moveHalf work ruleId (source.rule ruleId)
 
+omit [DecidableEq TapeIndex] in
 @[simp] theorem splitRuleId_card
     (source : Machine Control (TargetSymbol work)) :
     Fintype.card (SplitRuleId source) = 2 * source.ruleCount := by
   simp [SplitRuleId, Nat.two_mul]
 
+omit [DecidableEq TapeIndex] in
 @[simp] theorem splitState_card [Fintype Control]
     (source : Machine Control (TargetSymbol work)) :
     Fintype.card (SplitState Control source.RuleId) =

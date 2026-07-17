@@ -23,14 +23,14 @@ use the journal pages 525–532 in the PDF.
 | `HIST-01` | pp. 525–526; lines 30–34 | Recording discarded information makes a deterministic computation reversible; one record is stored per source step. | `HistoryRecorder`, `areInverses`, `history_length_of_run`, and `trace_cleanup` in `Bennett.History`. | Formalized under explicit recovery laws (Stage 2) |
 | `COPY-BLANK` | p. 526; line 32 | A duplicate can be generated/erased reversibly when the target is initially blank or known equal. | `Copy.blankEquiv`, `Copy.observedEquiv`, their exact domain laws, and `CopyAudit.overwriteStep_not_reversible`. | Formalized (Stage 3) |
 | `CCU-01` | p. 526; line 32 | Forward compute, blank-target copy, and backward compute retain input/output and erase history. | `Uncompute.computeCopyUncompute`, `exists_stages_of_run`, `computeCopyUncompute_eq_some_iff`, `computeCopyUncompute_symm_apply_of_run_halted`, and `exists_computeCopyUncompute_iff_terminates`. | Corrected/split and formalized as an exact-count semantic macro (Stage 3); autonomous scheduling remains Stage 6 |
-| `Q5-01` | p. 526; eq. (1), lines 40–49 | A read-write-shift quintuple is an individually injective partial map. | Stage 4 defines `Turing.Quintuple.Matches`/`execute` in read-write-move-control order; the constructive local inverse remains Stage 5. | Partial (Stage 4); inverse proof planned Stage 5 |
-| `Q5-MACHINE` | p. 526; line 49 | Domain/range non-overlap characterizes a deterministic/reversible rule collection. | Extensional semantics are separated in `Bennett.Transition.Core`; syntactic rule criteria remain for Stages 4–5. | Partial/corrected (Stage 2); `C-008` |
-| `Q4-DEF` | pp. 526–527; eq. (2), lines 53–60 | A quadruple applies read/write or shift, exclusively, on each tape. | Per-tape action and multi-tape quadruple syntax. | Planned (Stage 5) |
-| `SPLIT-01` | p. 527; eqs. (3)–(4), lines 62–74 | A quintuple splits into read/write then shift using a fresh connector state. | Exact two-step simulation and freshness theorem. | Planned (Stage 5) |
-| `INV-01` | p. 527; item 1, line 92 | Swapping states/symbols and negating shifts constructs the inverse quadruple. | `Quadruple.inverse` and two inverse laws. | Planned (Stage 5) |
-| `OVERLAP-D` | p. 527; item 2, line 93 | Domain overlap is characterized tape-wise by compatible reads. | Domain-overlap iff theorem. | Planned (Stage 5) |
-| `OVERLAP-R` | p. 527; item 3, line 94 | Range overlap is characterized tape-wise by compatible writes/shift actions. | Range-overlap iff theorem with well-typed action cases. | Corrected transcription / planned (Stage 5); `C-001` |
-| `MACH-REV` | p. 527; line 96 | Pairwise non-overlap of rule domains and ranges defines a deterministic reversible quadruple machine. | Semantic target (`Reversible`, `ReversibleOn`) is formalized; syntactic sufficient criteria remain for Stage 5. | Partial/corrected (Stage 2); `C-008` |
+| `Q5-01` | p. 526; eq. (1), lines 40–49 | A read-write-shift quintuple is an individually injective partial map. | `Quintuple.UndoMatches`, `undo`, `singleStep_areInverses`, and `execute_injective_on` in `Bennett.Turing.Source.Inverse`. | Formalized constructively (Stage 5): inverse order is shift/read/write |
+| `Q5-MACHINE` | p. 526; line 49 | Domain/range non-overlap characterizes a deterministic/reversible rule collection. | `QuadrupleMachine.DomainsDisjoint`/`RangesDisjoint`, relational uniqueness theorems, and the overlapping-but-extensionally-unique audit example. | Corrected/split and formalized as sufficient, not necessary (Stages 2 and 5); `C-008` |
+| `Q4-DEF` | pp. 526–527; eq. (2), lines 53–60 | A quadruple applies read/write or shift, exclusively, on each tape. | Heterogeneous `Action`, `MultiConfiguration`, and `Quadruple` in `Bennett.Turing.Quadruple.Core`. | Formalized by typed constructors (Stage 5) |
+| `SPLIT-01` | p. 527; eqs. (3)–(4), lines 62–74 | A quintuple splits into read/write then shift using a fresh connector state. | `SplitState`, `SourceSplit.writeHalf`/`moveHalf`, `lift_two_step_of_matches`, `Machine.splitMachine`, and exact `2N`/`f+N` component counts. | Formalized and clarified (Stage 5); pure split range obstruction is `C-012` |
+| `INV-01` | p. 527; item 1, line 92 | Swapping states/symbols and negating shifts constructs the inverse quadruple. | `Action.inverse`, `Quadruple.inverse`, `inverse_execute`, `step_areInverses`, and `inversePair`. | Constructive direction formalized (Stage 5); extensional necessity corrected by `C-011` |
+| `OVERLAP-D` | p. 527; item 2, line 93 | Domain overlap is characterized tape-wise by compatible reads. | Semantic `DomainsOverlap` and `domainsOverlap_iff_domainCompatible`, with executable decidability transported from the finite criterion. | Formalized (Stage 5) |
+| `OVERLAP-R` | p. 527; item 3, line 94 | Range overlap is characterized tape-wise by compatible writes/shift actions. | Semantic `RangesOverlap` and `rangesOverlap_iff_rangeCompatible` over the well-typed action cases. | Corrected transcription and formalized (Stage 5); `C-001` |
+| `MACH-REV` | p. 527; line 96 | Pairwise non-overlap of rule domains and ranges defines a deterministic reversible quadruple machine. | `stepRel_rightUnique`, `stepRel_leftUnique`, `step_reversible`, inverse-table disjointness transport, and `QuadrupleMachine.step_areInverses`. | Corrected/split and formalized as a sufficient unique-rule discipline (Stage 5); `C-008` |
 | `STD-IO` | p. 527; lines 98–124 | Standard word/tape/head format and standard source-machine restrictions. | `Tape.ofWord`, `Standard.config`, `Behavior.accepts`, `BennettNormalForm`, and `ComputesIn`/`Computes` in `Bennett.Turing`. | Corrected/split and formalized (Stage 4); concrete source instances remain later; `C-002`, `C-003` |
 | `STANDARDIZE` | note 4, line 296 | Any source machine can allegedly be standardized with a few extra symbols/rules. | Separate compiler/simulation theorem if later universality claims require it. | Unresolved; cited rather than proved by the paper |
 | `MAIN-SEM` | p. 527; lines 126–134 | For every standard source `S`, target `R` halts iff `S` halts and maps `(I;B;B)` to `(I;B;P)`. | Full configuration-level central correctness theorem. | Planned (Stage 6) |
@@ -100,8 +100,9 @@ C'_m [T', /, b] → [T, -, b] C_j
 
 Here the history move in the second rule is `-`; the output tape is only read as
 blank and is never changed during compute/retrace.  Table 1's special first and
-last rows are instances of these schemas.  Stage 5 must verify the precise
-formal inverse action order; Stage 6 must prove all cross-family non-overlap.
+last rows are instances of these schemas.  Stage 5's `Quadruple.inverse` now
+verifies the precise formal inverse action order; Stage 6 must instantiate these
+schemas and prove all within- and cross-family non-overlap.
 
 ```text
 C_f    [/, N, /] → [0, b, 0] C'_N

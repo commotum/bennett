@@ -19,7 +19,11 @@ def DemoSymbol : DemoTape → Type
   | .auxiliary => Fin 2
 
 instance (index : DemoTape) : DecidableEq (DemoSymbol index) := by
-  cases index <;> simp [DemoSymbol] <;> infer_instance
+  cases index
+  · change DecidableEq Bool
+    infer_instance
+  · change DecidableEq (Fin 2)
+    infer_instance
 
 def demoConfig : MultiConfiguration Bool DemoTape DemoSymbol where
   control := false

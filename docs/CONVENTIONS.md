@@ -93,12 +93,28 @@ fits the required semantics.
 
 ## Turing-Machine Semantics
 
-- **Selected from equation (1):** a source quintuple reads the current symbol,
+- **Selected from equation (1) and formalized in Stages 4–5:** a source
+  quintuple reads the current symbol,
   writes its replacement, moves the head left/right/stay, and then changes the
-  control state.  The order matters for inversion.
-- **Selected from equation (2):** on each tape, a target quadruple performs
+  control state.  `Quintuple.undo` is consequently shift/read/write rather than
+  another source quintuple; its validated partial inverse is proved exact.
+- **Selected from equation (2) and formalized in Stage 5:** on each tape, a
+  target quadruple performs
   exactly one of (a) read and write without moving or (b) move without reading
-  or writing.
+  or writing.  `Action` makes a read-plus-move or move-plus-write action
+  unrepresentable.
+- **Selected and formalized in Stage 5:** target configurations are
+  heterogeneous: a tape index `i` selects both its tape and its nonblank symbol
+  type `Symbol i`.  This is required for the concrete work/history/output
+  alphabets `(z,N+1,z)`; a homogeneous multi-tape carrier would lose that claim.
+- **Selected and formalized in Stage 5:** a rule's semantic domain/range overlap
+  is defined by a common complete configuration, then characterized by the
+  finite tape-wise `DomainCompatible`/`RangeCompatible` tests.  A move imposes
+  no symbol restriction; two rewrites must agree on scanned symbols for domain
+  overlap and written symbols for range overlap.
+- **Selected and formalized in Stage 5:** `Quadruple.inverse` swaps controls,
+  exchanges scanned/written symbols, and reverses moves.  It has the exact
+  converse successful graph on complete controls, tape contents, and heads.
 - **Selected:** the tape is two-way infinite, matching the paper's unbounded
   tape diagrams and avoiding a left-boundary convention absent from the source.
 - **Selected and formalized in Stage 4:** a tape has absolute `Int` head
@@ -128,7 +144,14 @@ fits the required semantics.
 
 - **Selected:** source rules are indexed `1,…,N`, with the required entry rule at
   index `1` and exit rule at index `N`.
-- **Selected:** every split source rule receives its own fresh connector state.
+- **Selected and formalized in Stage 5:** every split source rule receives its
+  own fresh connector state.  `SplitState Control RuleId = Control ⊕ RuleId`
+  makes connector/original disjointness and connector injectivity structural.
+- **Selected and formalized in Stage 5:** pure two-rule splitting is
+  domain-disjoint under source key injectivity, but is range-disjoint exactly
+  when the source rule-target map is injective.  Ordinary irreversible sources
+  need not satisfy this; Bennett's Stage 6 history-symbol write is the mechanism
+  that will distinguish the lower-half ranges.
 - **Selected:** forward (`A`), copy (`B`), and reverse (`C`) state families are
   represented with constructors or disjoint sums, not informal name freshness.
 - **Selected:** the third stage uses the inverse actions in reverse trace order;
@@ -168,6 +191,10 @@ fits the required semantics.
 - **Selected:** a source step is one quintuple execution.  A target step is one
   quadruple execution.  Splitting one source step therefore costs two target
   steps in the forward phase and two more in retracing.
+- **Selected and formalized in Stage 5:** the pure split of an `N`-rule source
+  contains exactly `2N` quadruples and adds exactly `N` connector controls, so
+  its control cardinality is `f+N` when the source control type has cardinality
+  `f`.  These are component counts, not the full Table 1 counts.
 - **Selected:** exact counts require finite, pairwise-disjoint constructors and
   explicit cardinality/freshness assumptions; semantic equivalence proves no
   numerical count by itself.

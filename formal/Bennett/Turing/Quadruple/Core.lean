@@ -76,7 +76,12 @@ def Matches (action : Action Symbol) (tape : Tape Symbol) : Prop :=
 
 instance [DecidableEq Symbol] (action : Action Symbol) (tape : Tape Symbol) :
     Decidable (action.Matches tape) := by
-  cases action <;> simp [Matches] <;> infer_instance
+  cases action with
+  | rewrite scanned written =>
+      change Decidable (tape.read = scanned)
+      infer_instance
+  | move direction =>
+      exact isTrue trivial
 
 /-- Execute an action.  Callers separately establish `Matches`. -/
 def execute (action : Action Symbol) (tape : Tape Symbol) : Tape Symbol :=

@@ -27,11 +27,25 @@ def RangeCompatible : Action Symbol → Action Symbol → Prop
 
 instance [DecidableEq Symbol] (first second : Action Symbol) :
     Decidable (first.DomainCompatible second) := by
-  cases first <;> cases second <;> simp [DomainCompatible] <;> infer_instance
+  cases first with
+  | rewrite firstScanned firstWritten =>
+      cases second with
+      | rewrite secondScanned secondWritten =>
+          change Decidable (firstScanned = secondScanned)
+          infer_instance
+      | move secondDirection => exact isTrue trivial
+  | move firstDirection => exact isTrue trivial
 
 instance [DecidableEq Symbol] (first second : Action Symbol) :
     Decidable (first.RangeCompatible second) := by
-  cases first <;> cases second <;> simp [RangeCompatible] <;> infer_instance
+  cases first with
+  | rewrite firstScanned firstWritten =>
+      cases second with
+      | rewrite secondScanned secondWritten =>
+          change Decidable (firstWritten = secondWritten)
+          infer_instance
+      | move secondDirection => exact isTrue trivial
+  | move firstDirection => exact isTrue trivial
 
 /-- A canonical tape witnessing compatible action domains. -/
 def commonDomainTape : Action Symbol → Action Symbol → Tape Symbol
