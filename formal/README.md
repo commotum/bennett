@@ -3,7 +3,7 @@
 This directory contains the pinned Lean 4 formalization project for Bennett's
 *Logical Reversibility of Computation*.
 
-The current public root contains the completed Stage 2–3 foundations:
+The current public root contains the completed Stage 2–4 foundations:
 
 ```text
 Bennett.lean
@@ -23,10 +23,20 @@ Bennett.lean
     │   ├── Core.lean
     │   ├── Audit.lean       # diagnostic; not publicly re-exported
     │   └── API.lean
-    └── Uncompute/
+    ├── Uncompute/
         ├── Core.lean
         ├── Correctness.lean
         ├── Audit.lean       # diagnostic; not publicly re-exported
+        └── API.lean
+    └── Turing/
+        ├── Tape.lean
+        ├── Word.lean
+        ├── Resource.lean
+        ├── Audit.lean       # diagnostic; not publicly re-exported
+        ├── Source/
+        │   ├── Core.lean
+        │   ├── Determinism.lean
+        │   └── Standard.lean
         └── API.lean
 ```
 
@@ -38,6 +48,7 @@ lake build Bennett.History.Run
 lake build Bennett.History.Audit
 lake build Bennett.Copy.Audit
 lake build Bennett.Uncompute.Audit
+lake build Bennett.Turing.Audit
 lake build Bennett
 ```
 
