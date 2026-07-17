@@ -82,21 +82,19 @@ excluded rather than silently weakened.
 
 ## Working Assumptions to Test
 
-- `Config → Option Config` is the selected executable one-step interface.
-  Mathlib `StateTransition.Reaches` and `eval` supply reachability and divergent
-  whole-computation semantics; mathlib `PEquiv` packages executable partial
-  inverse pairs.
-- A concrete history entry must store enough local information to recover a
-  predecessor.  `HistoryRecorder` makes instrumentation, forgetting, and both
-  recovery graph laws explicit; later rule IDs must discharge those laws.
-- A finite-support or zipper-style tape can give executable semantics and useful
-  visited-cell accounting without importing excessive computability machinery.
-- The strongest clean abstract history theorem may use a supplied encoding of
-  predecessor evidence, while the concrete machine later discharges it with
-  rule indices.
-- Bennett's exact counts depend on his standard-machine conventions and may
-  require explicit nondegeneracy assumptions (for example, distinct special
-  states and rules).  The formal result may need a corrected conditional form.
+- The exact full work-tape visited set should be the source execution trace's
+  visited set union the final-output delimiter traversal.  Any scalar `s`
+  corollary must state the inclusion/equality convention needed to reduce that
+  union; the paper supplies no such convention.
+- Copy and history phase projections can support exact visited/nonblank/active
+  measures, but they must be connected to the live schedule constructors by
+  geometry lemmas rather than treated as independent numerical models.
+- A segmented-history theorem needs a restart dump that includes control and
+  head data as well as tape contents.  Its exact discrete cost should use
+  unequal-segment rounding and `n-1` intermediate dumps before comparing with
+  the paper's continuous `v/n+ns` relaxation.
+- Nested checkpointing may remain excluded: the paper offers no construction
+  from which to derive its speculative logarithmic-space/quadratic-time claim.
 
 ## Success Metrics and Final Verification
 

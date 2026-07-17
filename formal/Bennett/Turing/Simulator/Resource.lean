@@ -60,6 +60,46 @@ def executionTrace (rules : List (Quadruple Control TapeIndex Symbol))
     (executionTrace rules start).states.length = rules.length + 1 := by
   rw [ExecutionTrace.states_length, executionTrace_transitionCount]
 
+/-- A tape projection of an explicit trace depends only on its initial tape. -/
+theorem executionTrace_tapes_eq (index : TapeIndex)
+    (rules : List (Quadruple Control TapeIndex Symbol))
+    (first second : MultiConfiguration Control TapeIndex Symbol)
+    (hinitial : first.tape index = second.tape index) :
+    (executionTrace rules first).states.map (fun state => state.tape index) =
+      (executionTrace rules second).states.map
+        (fun state => state.tape index) := by
+  induction rules generalizing first second with
+  | nil => simp [hinitial]
+  | cons rule rules ih =>
+      simp only [executionTrace_states_cons, List.map_cons]
+      congr 1
+      · exact hinitial
+      · apply ih
+        simp [hinitial]
+
+/-- A step invariant holds at every state of a matching explicit schedule. -/
+theorem Scheduled.forall_executionTrace
+    {rules : List (Quadruple Control TapeIndex Symbol)}
+    {start finish : MultiConfiguration Control TapeIndex Symbol}
+    {predicate : MultiConfiguration Control TapeIndex Symbol → Prop}
+    (hscheduled : Scheduled rules start finish)
+    (hinitial : predicate start)
+    (hstep : ∀ rule before, rule.Matches before → predicate before →
+      predicate (rule.execute before)) :
+    ∀ state ∈ (executionTrace rules start).states, predicate state := by
+  induction rules generalizing start with
+  | nil =>
+      intro state hstate
+      simpa using hinitial
+  | cons rule rules ih =>
+      simp only [Scheduled] at hscheduled
+      intro state hstate
+      rw [executionTrace_states_cons] at hstate
+      rcases List.mem_cons.mp hstate with rfl | htail
+      · exact hinitial
+      · exact ih hscheduled.2
+          (hstep rule start hscheduled.1 hinitial) state htail
+
 end Quadruple
 
 namespace Simulator.Copy.Resource
@@ -303,6 +343,30 @@ def copyTrace {source : Machine SourceControl Symbol}
   Quadruple.executionTrace (schedule normal word)
     (configuration source (.forward normal.finish)
       (Tape.ofWord word) history (Tape.blankAt (-1)))
+
+/-- Exact work-head sequence of the concrete copy trace. -/
+theorem copyTrace_work_heads
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (history : Tape source.RuleId) (word : List Symbol) :
+    (copyTrace normal history word).states.map
+      (fun state => (state.tape .work).head) =
+      headWalk (-1) (ids word) := by
+  unfold copyTrace schedule rule
+  rw [trace_work_heads]
+  rfl
+
+/-- Exact output-head sequence of the concrete copy trace. -/
+theorem copyTrace_output_heads
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (history : Tape source.RuleId) (word : List Symbol) :
+    (copyTrace normal history word).states.map
+      (fun state => (state.tape .output).head) =
+      headWalk (-1) (ids word) := by
+  unfold copyTrace schedule rule
+  rw [trace_output_heads]
+  rfl
 
 @[simp] theorem copyTrace_transitionCount
     {source : Machine SourceControl Symbol}
@@ -794,4 +858,94 @@ theorem peakSupport (sourceSteps : Nat) :
               sourceSteps copyTransitions,
           by simp⟩)
     exact hpeak
+
+private theorem mem_foldl_union_support
+    (states : List Shape) (initial : Finset Int) (position : Int) :
+    position ∈ states.foldl
+        (fun positions shape =>
+          positions ∪ (Shape.tape shape).nonblankPositions) initial ↔
+      position ∈ initial ∨
+        ∃ shape ∈ states,
+          position ∈ (Shape.tape shape).nonblankPositions := by
+  induction states generalizing initial with
+  | nil => simp
+  | cons shape states ih =>
+      rw [List.foldl_cons, ih]
+      simp only [Finset.mem_union, List.mem_cons]
+      aesop
+
+/-- Exactly cells `0, ..., v - 1` hold a record at some time. -/
+theorem everNonblankPositions_trace (sourceSteps copyTransitions : Nat) :
+    ExecutionTrace.everNonblankPositions Shape.tape
+        (trace sourceSteps copyTransitions) =
+      Finset.Ico 0 (sourceSteps : Int) := by
+  ext position
+  unfold ExecutionTrace.everNonblankPositions
+  rw [mem_foldl_union_support]
+  simp only [Finset.notMem_empty, false_or, Finset.mem_Ico]
+  constructor
+  · rintro ⟨shape, hshape, hposition⟩
+    simpa using support_subset_of_mem_states hshape hposition
+  · intro hposition
+    exact ⟨.encoded sourceSteps,
+      encoded_sourceSteps_mem_states sourceSteps copyTransitions,
+      by simpa using hposition⟩
+
+/-- Head scans already contain the entire ever-nonblank history footprint. -/
+theorem footprintPositions_trace (sourceSteps copyTransitions : Nat) :
+    ExecutionTrace.footprintPositions Shape.tape
+        (trace sourceSteps copyTransitions) =
+      Finset.Icc (-1) ((sourceSteps : Int) - 1) := by
+  rw [ExecutionTrace.footprintPositions, visitedPositions_trace,
+    everNonblankPositions_trace]
+  apply Finset.union_eq_left.mpr
+  intro position hposition
+  simp at hposition ⊢
+  omega
+
+@[simp] theorem footprintPositions_card_trace
+    (sourceSteps copyTransitions : Nat) :
+    (ExecutionTrace.footprintPositions Shape.tape
+      (trace sourceSteps copyTransitions)).card = sourceSteps + 1 := by
+  rw [footprintPositions_trace, Int.card_Icc]
+  omega
+
+/-!
+### Specialization to the concrete copy loop
+
+For an output word of length `lambda`, copying takes
+`4 * lambda + 5` transitions.  The substitution below yields the full time
+formula while leaving every history-space measure independent of `lambda`.
+-/
+
+@[simp] theorem transitionCount_concreteTrace
+    (sourceSteps outputLength : Nat) :
+    (trace sourceSteps (4 * outputLength + 5)).transitionCount =
+      4 * sourceSteps + 4 * outputLength + 5 := by
+  simp
+  omega
+
+@[simp] theorem stateCount_concreteTrace
+    (sourceSteps outputLength : Nat) :
+    (trace sourceSteps (4 * outputLength + 5)).states.length =
+      4 * sourceSteps + 4 * outputLength + 6 := by
+  simp
+  omega
+
+/-- Exact history-tape cost of the concrete compute--copy--retrace trace. -/
+theorem concreteTrace_history_cost (sourceSteps outputLength : Nat) :
+    ExecutionTrace.visitedPositions Shape.tape
+        (trace sourceSteps (4 * outputLength + 5)) =
+        Finset.Icc (-1) ((sourceSteps : Int) - 1) ∧
+      (ExecutionTrace.visitedPositions Shape.tape
+        (trace sourceSteps (4 * outputLength + 5))).card = sourceSteps + 1 ∧
+      ExecutionTrace.everNonblankPositions Shape.tape
+        (trace sourceSteps (4 * outputLength + 5)) =
+        Finset.Ico 0 (sourceSteps : Int) ∧
+      ExecutionTrace.maximumNonblankCells Shape.tape
+        (trace sourceSteps (4 * outputLength + 5)) = sourceSteps := by
+  exact ⟨visitedPositions_trace _ _, visitedPositions_card_trace _ _,
+    everNonblankPositions_trace _ _, maximumNonblankCells_trace _ _⟩
+
+end Simulator.HistorySpace
 end Bennett.Turing
