@@ -22,24 +22,24 @@ use the journal pages 525–532 in the PDF.
 | `INPUT-RETENTION` | p. 525; line 30 | A reversible output-only realization cannot discard inputs when the computed function is noninjective. | `Bennett.Copy.injective_of_reversible_outputOnly`; the constructive retained-input endpoint is `computeCopyUncompute_apply_of_run_halted`. | Corrected and formalized (Stage 3): applies to a precise one-step realization equation |
 | `HIST-01` | pp. 525–526; lines 30–34 | Recording discarded information makes a deterministic computation reversible; one record is stored per source step. | `HistoryRecorder`, `areInverses`, `history_length_of_run`, and `trace_cleanup` in `Bennett.History`. | Formalized under explicit recovery laws (Stage 2) |
 | `COPY-BLANK` | p. 526; line 32 | A duplicate can be generated/erased reversibly when the target is initially blank or known equal. | `Copy.blankEquiv`, `Copy.observedEquiv`, their exact domain laws, and `CopyAudit.overwriteStep_not_reversible`. | Formalized (Stage 3) |
-| `CCU-01` | p. 526; line 32 | Forward compute, blank-target copy, and backward compute retain input/output and erase history. | `Uncompute.computeCopyUncompute`, `exists_stages_of_run`, `computeCopyUncompute_eq_some_iff`, `computeCopyUncompute_symm_apply_of_run_halted`, and `exists_computeCopyUncompute_iff_terminates`. | Corrected/split and formalized as an exact-count semantic macro (Stage 3); autonomous scheduling remains Stage 6 |
+| `CCU-01` | p. 526; line 32 | Forward compute, blank-target copy, and backward compute retain input/output and erase history. | Abstract `Uncompute.computeCopyUncompute` and its exact domain/inverse theorems; concrete `Simulator.scheduled_of_computesIn`, `runs_of_computesIn`, and `central_correctness`. | Corrected/split and formalized: reusable exact-count macro (Stage 3) and autonomous three-tape machine (Stage 6) |
 | `Q5-01` | p. 526; eq. (1), lines 40–49 | A read-write-shift quintuple is an individually injective partial map. | `Quintuple.UndoMatches`, `undo`, `singleStep_areInverses`, and `execute_injective_on` in `Bennett.Turing.Source.Inverse`. | Formalized constructively (Stage 5): inverse order is shift/read/write |
-| `Q5-MACHINE` | p. 526; line 49 | Domain/range non-overlap characterizes a deterministic/reversible rule collection. | `QuadrupleMachine.DomainsDisjoint`/`RangesDisjoint`, relational uniqueness theorems, and the overlapping-but-extensionally-unique audit example. | Corrected/split and formalized as sufficient, not necessary (Stages 2 and 5); `C-008` |
+| `Q5-MACHINE` | p. 526; line 49 | Domain/range non-overlap characterizes a deterministic/reversible rule collection. | `QuadrupleMachine.DomainsDisjoint`/`RangesDisjoint`, relational uniqueness theorems, the overlapping-but-extensionally-unique audit example, and the concrete `machineWithEnumeration_syntacticallyReversible`. | Corrected/split and formalized as sufficient, not necessary (Stages 2, 5, and 6); `C-008` |
 | `Q4-DEF` | pp. 526–527; eq. (2), lines 53–60 | A quadruple applies read/write or shift, exclusively, on each tape. | Heterogeneous `Action`, `MultiConfiguration`, and `Quadruple` in `Bennett.Turing.Quadruple.Core`. | Formalized by typed constructors (Stage 5) |
 | `SPLIT-01` | p. 527; eqs. (3)–(4), lines 62–74 | A quintuple splits into read/write then shift using a fresh connector state. | `SplitState`, `SourceSplit.writeHalf`/`moveHalf`, `lift_two_step_of_matches`, `Machine.splitMachine`, and exact `2N`/`f+N` component counts. | Formalized and clarified (Stage 5); pure split range obstruction is `C-012` |
 | `INV-01` | p. 527; item 1, line 92 | Swapping states/symbols and negating shifts constructs the inverse quadruple. | `Action.inverse`, `Quadruple.inverse`, `inverse_execute`, `step_areInverses`, and `inversePair`. | Constructive direction formalized (Stage 5); extensional necessity corrected by `C-011` |
 | `OVERLAP-D` | p. 527; item 2, line 93 | Domain overlap is characterized tape-wise by compatible reads. | Semantic `DomainsOverlap` and `domainsOverlap_iff_domainCompatible`, with executable decidability transported from the finite criterion. | Formalized (Stage 5) |
 | `OVERLAP-R` | p. 527; item 3, line 94 | Range overlap is characterized tape-wise by compatible writes/shift actions. | Semantic `RangesOverlap` and `rangesOverlap_iff_rangeCompatible` over the well-typed action cases. | Corrected transcription and formalized (Stage 5); `C-001` |
-| `MACH-REV` | p. 527; line 96 | Pairwise non-overlap of rule domains and ranges defines a deterministic reversible quadruple machine. | `stepRel_rightUnique`, `stepRel_leftUnique`, `step_reversible`, inverse-table disjointness transport, and `QuadrupleMachine.step_areInverses`. | Corrected/split and formalized as a sufficient unique-rule discipline (Stage 5); `C-008` |
-| `STD-IO` | p. 527; lines 98–124 | Standard word/tape/head format and standard source-machine restrictions. | `Tape.ofWord`, `Standard.config`, `Behavior.accepts`, `BennettNormalForm`, and `ComputesIn`/`Computes` in `Bennett.Turing`. | Corrected/split and formalized (Stage 4); concrete source instances remain later; `C-002`, `C-003` |
+| `MACH-REV` | p. 527; line 96 | Pairwise non-overlap of rule domains and ranges defines a deterministic reversible quadruple machine. | Generic `stepRel_rightUnique`, `stepRel_leftUnique`, `step_reversible`, inverse-table laws, plus `Simulator.machineWithEnumeration_syntacticallyReversible`. | Corrected/split and formalized as a sufficient unique-rule discipline (Stages 5–6); `C-008` |
+| `STD-IO` | p. 527; lines 98–124 | Standard word/tape/head format and standard source-machine restrictions. | `Tape.ofWord`, `Standard.config`, `Behavior.accepts`, `BennettNormalForm`, and `ComputesIn`/`Computes`; Stage 6 central endpoints instantiate all three tapes. | Corrected/split and formalized (Stages 4 and 6); empty words included; `C-002`, `C-003` |
 | `STANDARDIZE` | note 4, line 296 | Any source machine can allegedly be standardized with a few extra symbols/rules. | Separate compiler/simulation theorem if later universality claims require it. | Unresolved; cited rather than proved by the paper |
-| `MAIN-SEM` | p. 527; lines 126–134 | For every standard source `S`, target `R` halts iff `S` halts and maps `(I;B;B)` to `(I;B;P)`. | Full configuration-level central correctness theorem. | Planned (Stage 6) |
-| `MAIN-SYNTAX` | p. 527; lines 136–148 | Exact states/rules/alphabets: `2f+2N+4`, `4N+2z+3`, and `(z,N+1,z)`. | Cardinality theorems over the constructed finite syntax. | Planned (Stage 7) |
-| `MAIN-COST` | p. 527; lines 148–154 | Exact time `4v+4λ+5` and tape spaces `(s,v+1,λ+2)`. | Stage 4 defines exact endpoint traces and separate visited/nonblank/footprint/peak measures; construction-derived formulas remain Stage 7. | Partial infrastructure (Stage 4); exact claims planned Stage 7; `C-004`, `C-005` |
-| `TABLE1-COMPUTE` | p. 528; Table 1, eq. (11), lines 183–201 | Two target rules per source rule; history stores rule index `m` out of phase with work/output actions. | Indexed forward-stage syntax and one-step/two-step simulation. | Planned (Stage 6) |
-| `TABLE1-COPY` | p. 528; Table 1 | Five fixed copy-stage rules plus two families over each nonblank `x`; copy target begins blank. | Standard-word copy loop and blank invariant. | Planned (Stage 6) |
-| `TABLE1-RETRACE` | p. 528; Table 1, lines 203–205 | `C`-labelled inverses retrace first-stage rules and erase history. | Reverse trace theorem restoring full configuration. | Planned (Stage 6) |
-| `TABLE1-NONOVERLAP` | p. 529; line 205 | All domains and ranges, including stage boundaries, are non-overlapping. | Finite rule-family disjointness and semantic determinism/reversibility. | Planned (Stage 6) |
+| `MAIN-SEM` | p. 527; lines 126–134 | For every standard source `S`, target `R` halts iff `S` halts and maps `(I;B;B)` to `(I;B;P)`. | `Simulator.SimulationCertificate`, `central_correctness`, and `terminates_iff_source` in `Bennett.Turing.Simulator.Correctness`. | Corrected/split and formalized (Stage 6): all controls/tapes/heads are explicit, inputs must be accepted standard words, raw `A₁`/`C₁` controls differ; `C-009` |
+| `MAIN-SYNTAX` | p. 527; lines 136–148 | Exact states/rules/alphabets: `2f+2N+4`, `4N+2z+3`, and `(z,N+1,z)`. | `Simulator.control_card`, `tableRuleId_card_fullAlphabet`, `workAlphabet_card`, `historyAlphabet_card`, and `outputAlphabet_card`. | Formalized (Stage 6), with disjoint constructors and `z = card Symbol + 1` |
+| `MAIN-COST` | p. 527; lines 148–154 | Exact time `4v+4λ+5` and tape spaces `(s,v+1,λ+2)`. | Exact time is `scheduled_of_computesIn`/`runs_of_computesIn`; Stage 4 supplies distinct tape measures and Stage 7 derives their concrete trace values. | Split/partial: exact time formalized (Stage 6); exact space audit remains Stage 7; `C-004`, `C-005` |
+| `TABLE1-COMPUTE` | p. 528; Table 1, eq. (11), lines 183–201 | Two target rules per source rule; history stores rule index `m` out of phase with work/output actions. | `forwardRewriteRule`, `forwardRecordRule`, `forward_two_step`, and `forward_scheduled_of_run_empty` in `Simulator.Compute`. | Formalized (Stage 6), using intrinsic rule IDs rather than ordinal labels; `C-013` |
+| `TABLE1-COPY` | p. 528; Table 1 | Five fixed copy-stage rules plus two families over each nonblank `x`; copy target begins blank. | `CopyRuleId`, `Copy.ruleAt`, `Copy.scheduled`, and `Copy.scheduled_encode`. | Formalized (Stage 6), including `λ=0`, exact `4λ+5`, blank target, endpoint heads, and unchanged checked history; `C-003`, `C-014` |
+| `TABLE1-RETRACE` | p. 528; Table 1, lines 203–205 | `C`-labelled inverses retrace first-stage rules and erase history. | `reverseEraseRule`, `reverseRestoreRule`, `reverse_two_step`, and `forward_reverse_scheduled_to_standard_finish` in `Simulator.Reverse`. | Formalized (Stage 6): exact work/history/head cleanup and retained output; physical control ends in the reverse phase; `C-009` |
+| `TABLE1-NONOVERLAP` | p. 529; line 205 | All domains and ranges, including stage boundaries, are non-overlapping. | `rules_domains_disjoint`, `rules_ranges_disjoint`, and `machineWithEnumeration_syntacticallyReversible` in `Simulator.Nonoverlap`. | Formalized globally (Stage 6) under source key injectivity and `NoFinishBlankRule`, both supplied by normal form; sharp failure witnesses are proved |
 | `GENERAL-HISTORY` | p. 529; line 209 | The history method applies to any deterministic finite/infinite automaton with sufficient storage. | `HistoryRecorder` theorem for executable partial steps with explicit instrumenting/recovery data; no generic record-size bound. | Corrected and formalized under explicit assumptions (Stage 2) |
 | `ONE-TAPE` | p. 529; line 209 | A one-tape reversible simulator may take as many as `v²` steps. | Separate model/construction would be required. | Unresolved; not required by main construction |
 | `TABLE2` | prose p. 529, table p. 530; line 211 | If output computably recovers input, seven reversible stages can erase the retained input. | Stage 3 formalizes the required blank-copy/equality-checked uncopy primitive; the seven-stage composition still needs forward/inverse realizations of `S₁` and `S₂`. | Partial; planned after Stage 6; `C-006` |
@@ -50,7 +50,8 @@ use the journal pages 525–532 in the PDF.
 
 ## Table 1 Reconstruction Ledger
 
-This transcription is a design input, not yet a verified Lean program.  Bracket
+This transcription has been reconstructed and verified as explicit Lean syntax
+in `Bennett.Turing.Simulator`.  Bracket
 entries are ordered `(working, history, output)`.  `/` means shift/no-read;
 `b` is blank; `x` ranges over nonblank source symbols.
 
@@ -64,8 +65,10 @@ A'_m [/, b, /]  → [σ, m, 0] A_k
 ```
 
 The first and last indexed instances shown separately in the table agree with
-the special entry/exit quintuples.  After the last lower rule, state is `A_f`,
-work is standard output, history head scans record `N`, and output tape is blank.
+the special entry/exit quintuples.  Formally, `entryId` and `exitId` are
+distinguished intrinsic IDs rather than literal ordinal positions (`C-013`).
+After the exit lower rule, state is `A_f`, work is standard output, history head
+scans `exitId`, and output tape is blank.
 
 ```text
 A₁     [b, /, b] → [b, +, b] A'₁
@@ -100,9 +103,9 @@ C'_m [T', /, b] → [T, -, b] C_j
 
 Here the history move in the second rule is `-`; the output tape is only read as
 blank and is never changed during compute/retrace.  Table 1's special first and
-last rows are instances of these schemas.  Stage 5's `Quadruple.inverse` now
-verifies the precise formal inverse action order; Stage 6 must instantiate these
-schemas and prove all within- and cross-family non-overlap.
+last rows are instances of these schemas.  Stage 5's `Quadruple.inverse`
+verifies the precise inverse action order; Stage 6 instantiates the schemas and
+proves every within- and cross-family domain/range separation case.
 
 ```text
 C_f    [/, N, /] → [0, b, 0] C'_N

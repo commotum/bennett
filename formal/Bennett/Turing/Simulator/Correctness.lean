@@ -352,7 +352,8 @@ theorem central_correctness [Fintype Symbol]
       initialHistory := by simp
       initialOutput := by simp
       finalControl := by simp
-      logicalControlRestored := by simp
+      logicalControlRestored :=
+        logicalControl_restored source normal.start input output
       finalWork := by simp
       finalHistory := by simp
       finalOutput := by simp

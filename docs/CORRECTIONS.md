@@ -42,13 +42,15 @@ it does not license silently using the proposed repair.
   restriction separately if exact fidelity requires it.
 - **Justification:** these are the facts used to prove first/last execution and
   cross-stage domain/range non-overlap.
-- **Consequences:** `StandardSource` will expose directional freshness and
-  nondegeneracy assumptions; exact state counts remain conditional on them.
+- **Consequences:** `BennettNormalForm` exposes directional source assumptions;
+  disjoint simulator-control constructors make the target state count
+  unconditional once the finite source cardinalities are fixed.
 - **Status:** The directional assumptions are formalized in Stage 4 as
   `Standard.BennettNormalForm` (`entry_only_rule_from_start`,
   `no_rule_targets_start`, `exit_only_rule_to_finish`, and
-  `no_rule_sources_finish`).  Concrete Table 1 use and exact counts remain
-  Stages 6–7.
+  `no_rule_sources_finish`).  Stage 6 uses them in the exact endpoint and global
+  non-overlap proofs.  Its reusable boundary theorem needs only the weaker
+  `NoFinishBlankRule`; normal form supplies that condition.
 
 ## C-003 — Empty standard strings are unspecified
 
@@ -66,9 +68,9 @@ it does not license silently using the proposed repair.
   in Stages 4, 6, and 7.
 - **Status:** Stage 4's canonical model admits `[]`, represents it as an all-blank
   tape with head at the left delimiter `-1`, and proves its potential complete
-  delimiter traversal has two cells (`λ+2 = 2`).  `NonemptyWord` remains an
-  explicit optional premise; copy-loop execution/time proofs in Stages 6–7 must
-  determine whether the paper theorem covers `λ=0`.
+  delimiter traversal has two cells (`λ+2 = 2`).  Stage 6's concrete
+  `Copy.scheduled_encode` covers `[]` without an extra assumption and proves the
+  five-transition endpoint; the general schedule has length `4λ+5`.
 
 ## C-004 — “About twice” conflicts with the target step unit
 
@@ -85,9 +87,11 @@ it does not license silently using the proposed repair.
   computation.
 - **Justification:** direct enumeration of the two forward and two inverse
   quadruples per source step.
-- **Consequences:** documentation will not use an unqualified factor-two claim;
-  Stage 7 will prove the exact trace length before stating any ratio.
-- **Status:** Exact formula awaiting proof (Stage 7); terminology corrected now.
+- **Consequences:** documentation does not use an unqualified factor-two claim.
+  Space accounting remains independent of this transition-count result.
+- **Status:** Corrected and formalized in Stage 6.
+  `Simulator.scheduled_of_computesIn` and `runs_of_computesIn` prove the exact
+  `4v+4λ+5` schedule/run length as `2v + (4λ+5) + 2v` target transitions.
 
 ## C-005 — “Uses squares” does not define one uniform space measure
 
@@ -110,9 +114,8 @@ it does not license silently using the proposed repair.
   Stage 4 defines measures and Stage 7 audits the formulas.
 - **Status:** Stage 4 formalizes separate `visitedPositions`,
   `everNonblankPositions`, `footprintPositions`, `maximumNonblankCells`, and
-  `maximumActiveCells`.  It proves only the layout fact that a complete
-  delimiter traversal has `λ+2` positions; actual Table 1 trace footprints and
-  the source-tape `s`/`s+1` question remain open for Stages 6–7.
+  `maximumActiveCells`.  Stage 6 supplies the exact schedules; Stage 7 derives
+  their trace footprints and resolves the source-tape `s`/`s+1` question.
 
 ## C-006 — Table 2 erasure is conditional inverse copying
 
@@ -128,8 +131,10 @@ it does not license silently using the proposed repair.
 - **Consequences:** any Table 2 theorem depends on Stage 3's copy partial inverse
   and on `S₂` computing the original input from the output.
 - **Status:** The abstract blank-copy/equality-checked inverse is formalized in
-  Stage 3 (`Copy.blankEquiv` and `observedEquiv`).  The standard-tape copy loop,
-  head-format invariant, and full Table 2 composition remain open after Stage 6.
+  Stage 3 (`Copy.blankEquiv` and `observedEquiv`).  Stage 6 proves the concrete
+  standard-tape loop and exact head invariant.  The full seven-stage Table 2
+  composition remains open because it additionally requires concrete forward
+  and inverse realizations of both `S₁` and the recovery machine `S₂`.
 
 ## C-007 — Segmented optimum is continuous and omits costs
 
@@ -183,8 +188,8 @@ it does not license silently using the proposed repair.
   that both conditions make the pointwise inverse table an exact partial
   inverse.  `Quadruple.Audit` also kernel-checks an overlapping two-rule table
   whose union relation is nevertheless right- and left-unique, demonstrating
-  why the converse is not unconditional.  Concrete Table 1 non-overlap remains
-  Stage 6.
+  why the converse is not unconditional.  Stage 6 proves the stronger global
+  syntactic discipline for the complete concrete Table 1 rule family.
 
 ## C-009 — Table 1 does not restore the literal whole-machine state
 
@@ -203,9 +208,12 @@ it does not license silently using the proposed repair.
 - **Consequences:** the central theorem cannot assert raw initial/final
   configuration equality; control-phase renaming remains observable in the
   syntactic machine and in exact state counts.
-- **Status:** Stage 2's abstract `HistoryRecorder.trace_cleanup` proves literal
-  restoration on a single state carrier.  The concrete `A₁`/`C₁` projection
-  remains open for Stage 6.
+- **Status:** Corrected and formalized.  Stage 2's abstract
+  `HistoryRecorder.trace_cleanup` proves literal restoration on a single state
+  carrier.  Stage 6 names the distinct physical controls in
+  `SimulationCertificate.initialControl`/`finalControl` and proves the exact
+  phase-forgetting equality as `Simulator.logicalControl_restored` (also a
+  field of the central certificate).
 
 ## C-010 — Reversible stages do not automatically form a reversible union
 
@@ -227,7 +235,10 @@ it does not license silently using the proposed repair.
   than citing macro composition or per-stage reversibility alone.
 - **Status:** Sequential semantic composition is formalized in Stage 3 as
   `Uncompute.computeCopyUncompute` with global macro reversibility.  Autonomous
-  scheduling and concrete cross-family non-overlap remain open for Stage 6.
+  scheduling is formalized in Stage 6 by the finite Table 1 machine.
+  `rules_domains_disjoint` and `rules_ranges_disjoint` prove every within- and
+  cross-family case; `machineWithEnumeration_syntacticallyReversible` transports
+  them to executable machine syntax.
 
 ## C-011 — Extensional “only if” inverse tests need nondegeneracy
 
@@ -271,8 +282,49 @@ it does not license silently using the proposed repair.
   explicit semantic overlap iff, and
   `Machine.splitRule_ranges_disjoint_iff_target_injective` lifts it to the full
   tagged rule family.
-- **Consequences:** Stage 6 must keep the history write in the move half and use
+- **Consequences:** Stage 6 keeps the history write in the move half and uses
   its rule-ID symbol to prove range disjointness.  Omitting it would invalidate
   global reversibility whenever source rules merge into one control state.
-- **Status:** Clarified and formalized in Stage 5; the history-bearing repair is
-  the next Stage 6 construction obligation.
+- **Status:** Clarified and fully formalized across Stages 5–6.  Stage 6's
+  `forwardRecordRule` writes the intrinsic rule ID, `reverseEraseRule` checks and
+  erases it, and the global range-disjointness proof uses those distinct history
+  outputs.  `duplicate_key_causes_restore_range_overlap` records the separate
+  obstruction when source keys themselves are duplicated.
+
+## C-013 — Printed rule numbers are labels, not semantic order
+
+- **Location:** journal pp. 527–529, standard-machine prose and Table 1.
+- **Original claim/convention:** source quintuples are numbered `1,…,N`, with
+  the entry and exit rules displayed as `1` and `N`; those numbers are then
+  written on the history tape.
+- **Issue:** a finite rule table has no mathematically canonical ordering, and
+  Lean's intrinsic `Fin N` indices are zero-based.  Requiring the entry/exit
+  rules to occupy literal first/last enumeration positions would add an
+  irrelevant representation assumption to a semantic theorem.
+- **Corrected formulation:** normal form supplies distinguished `entryId` and
+  `exitId`.  History stores intrinsic rule IDs, while any equivalence used to
+  enumerate the target table is semantically opaque.
+- **Justification:** recovery requires a unique rule identifier, not an ordinal
+  relation between identifiers.
+- **Consequences:** the history alphabet still has exactly `N+1` full symbols;
+  all counts and schedules are unchanged.  Documentation renders the paper's
+  `1`/`N` only as presentation names.
+- **Status:** Corrected and formalized in Stages 4 and 6.
+
+## C-014 — “No history writing” still performs checked identity rewrites
+
+- **Location:** journal p. 528, Table 1 copy stage.
+- **Original claim/prose:** the copying stage operates without adding to the
+  history.
+- **Issue:** in the quadruple formalism, copy rows display the terminal history
+  symbol on both sides.  They do not append a record, but they do read and
+  rewrite that cell identically; treating history as an unrestricted no-op
+  would enlarge rule domains and invalidate boundary non-overlap.
+- **Corrected formulation:** every copy rule checks the terminal history record
+  and applies an identity rewrite at the unchanged head position.
+- **Justification:** this is the literal Table 1 action and is used by the
+  finite domain/range compatibility proofs.
+- **Consequences:** the history tape is extensionally unchanged during copying,
+  while the copy phase remains enabled only at the validated forward endpoint.
+- **Status:** Clarified and formalized in Stage 6 by `Copy.ruleAt`,
+  `Copy.scheduled_encode`, and the cross-family non-overlap theorems.
