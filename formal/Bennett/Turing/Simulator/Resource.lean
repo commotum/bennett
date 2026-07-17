@@ -73,9 +73,9 @@ theorem executionTrace_tapes_eq (index : TapeIndex)
   | cons rule rules ih =>
       simp only [executionTrace_states_cons, List.map_cons]
       congr 1
-      · exact hinitial
-      · apply ih
-        simp [hinitial]
+      apply ih
+      simpa only [execute_tape] using
+        congrArg ((rule.action index).execute) hinitial
 
 /-- A step invariant holds at every state of a matching explicit schedule. -/
 theorem Scheduled.forall_executionTrace
@@ -84,21 +84,28 @@ theorem Scheduled.forall_executionTrace
     {predicate : MultiConfiguration Control TapeIndex Symbol → Prop}
     (hscheduled : Scheduled rules start finish)
     (hinitial : predicate start)
-    (hstep : ∀ rule before, rule.Matches before → predicate before →
-      predicate (rule.execute before)) :
+    (hstep : ∀ (rule : Quadruple Control TapeIndex Symbol)
+      (before : MultiConfiguration Control TapeIndex Symbol),
+      rule ∈ rules → rule.Matches before → predicate before →
+        predicate (rule.execute before)) :
     ∀ state ∈ (executionTrace rules start).states, predicate state := by
   induction rules generalizing start with
   | nil =>
       intro state hstate
-      simpa using hinitial
+      have hstateEq : state = start := by simpa using hstate
+      subst state
+      exact hinitial
   | cons rule rules ih =>
       simp only [Scheduled] at hscheduled
       intro state hstate
       rw [executionTrace_states_cons] at hstate
       rcases List.mem_cons.mp hstate with rfl | htail
       · exact hinitial
-      · exact ih hscheduled.2
-          (hstep rule start hscheduled.1 hinitial) state htail
+      · apply ih hscheduled.2
+          (hstep rule start (by simp) hscheduled.1 hinitial)
+        · intro tailRule before hmem
+          exact hstep tailRule before (by simp [hmem])
+        · exact htail
 
 end Quadruple
 
@@ -333,7 +340,137 @@ theorem trace_history_heads {source : Machine SourceControl Symbol}
         List.replicate_succ]
       rfl
 
+/-- Cell/support invariant needed for exact copy-space accounting. -/
+structure DataInvariant {source : Machine SourceControl Symbol}
+    (word : List Symbol) (state : Simulator.Configuration source) : Prop where
+  workCells : (state.tape .work).cells = (Tape.ofWord word).cells
+  dataHeads : (state.tape .work).head = (state.tape .output).head
+  outputSupport : (state.tape .output).nonblankPositions ⊆
+    (Tape.ofWord word).nonblankPositions
+
 variable [DecidableEq SourceControl] [DecidableEq Symbol]
+
+theorem execute_work_cells_of_matches
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (ruleId : CopyRuleId Symbol) (before : Simulator.Configuration source)
+    (hmatch : (rule normal ruleId).Matches before) :
+    (((rule normal ruleId).execute before).tape .work).cells =
+      (before.tape .work).cells := by
+  have hwork := hmatch.2 .work
+  cases ruleId with
+  | enter | turn | exit =>
+      simp only [rule, ruleAt, threeRule, Action.Matches] at hwork
+      simp only [rule, ruleAt, threeRule, Quadruple.execute_tape,
+        Action.execute]
+      rw [← hwork, Tape.write_read]
+  | copySymbol symbol | checkSymbol symbol =>
+      simp only [rule, ruleAt, threeRule, Action.Matches] at hwork
+      simp only [rule, ruleAt, threeRule, Quadruple.execute_tape,
+        Action.execute]
+      rw [← hwork, Tape.write_read]
+  | moveRight | moveLeft => rfl
+
+theorem execute_dataHeads
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (ruleId : CopyRuleId Symbol) (before : Simulator.Configuration source)
+    (hheads : (before.tape .work).head = (before.tape .output).head) :
+    (((rule normal ruleId).execute before).tape .work).head =
+      (((rule normal ruleId).execute before).tape .output).head := by
+  cases ruleId <;>
+    simp_all [rule, ruleAt, threeRule, Action.execute, Tape.move]
+
+theorem work_head_mem_of_match
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source) (symbol : Symbol)
+    (before : Simulator.Configuration source)
+    (hmatch : (rule normal (.copySymbol symbol)).Matches before) :
+    (before.tape .work).head ∈ (before.tape .work).nonblankPositions := by
+  have hread := hmatch.2 .work
+  simp only [rule, ruleAt, threeRule, Action.Matches] at hread
+  rw [Tape.nonblankPositions, Finsupp.mem_support_iff]
+  intro hblank
+  have : (before.tape .work).read = .blank := by
+    simpa [Tape.read] using hblank
+  rw [this] at hread
+  contradiction
+
+theorem DataInvariant.execute
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source) (word : List Symbol)
+    (ruleId : CopyRuleId Symbol) (before : Simulator.Configuration source)
+    (hmatch : (rule normal ruleId).Matches before)
+    (hinvariant : DataInvariant word before) :
+    DataInvariant word ((rule normal ruleId).execute before) := by
+  constructor
+  · rw [execute_work_cells_of_matches normal ruleId before hmatch]
+    exact hinvariant.workCells
+  · exact execute_dataHeads normal ruleId before hinvariant.dataHeads
+  · cases ruleId with
+    | copySymbol symbol =>
+        have hheadWork := work_head_mem_of_match normal symbol before hmatch
+        have hheadWord :
+            (before.tape .output).head ∈
+              (Tape.ofWord word).nonblankPositions := by
+          rw [← hinvariant.dataHeads]
+          change (before.tape .work).head ∈ (Tape.ofWord word).cells.support
+          rw [← hinvariant.workCells]
+          exact hheadWork
+        intro position hposition
+        change position ∈ insert (before.tape .output).head
+          (before.tape .output).nonblankPositions at hposition
+        rw [Finset.mem_insert] at hposition
+        rcases hposition with hposition | hposition
+        · simpa [hposition] using hheadWord
+        · exact hinvariant.outputSupport hposition
+    | enter =>
+        have houtput := hmatch.2 .output
+        simp only [rule, ruleAt, threeRule, Action.Matches] at houtput
+        change ((before.tape .output).write .blank).nonblankPositions ⊆ _
+        have htape : (before.tape .output).write .blank =
+            before.tape .output := by
+          exact (congrArg (before.tape .output).write houtput.symm).trans
+            (Tape.write_read (before.tape .output))
+        rw [htape]
+        exact hinvariant.outputSupport
+    | turn =>
+        have houtput := hmatch.2 .output
+        simp only [rule, ruleAt, threeRule, Action.Matches] at houtput
+        change ((before.tape .output).write .blank).nonblankPositions ⊆ _
+        have htape : (before.tape .output).write .blank =
+            before.tape .output := by
+          exact (congrArg (before.tape .output).write houtput.symm).trans
+            (Tape.write_read (before.tape .output))
+        rw [htape]
+        exact hinvariant.outputSupport
+    | exit =>
+        have houtput := hmatch.2 .output
+        simp only [rule, ruleAt, threeRule, Action.Matches] at houtput
+        change ((before.tape .output).write .blank).nonblankPositions ⊆ _
+        have htape : (before.tape .output).write .blank =
+            before.tape .output := by
+          exact (congrArg (before.tape .output).write houtput.symm).trans
+            (Tape.write_read (before.tape .output))
+        rw [htape]
+        exact hinvariant.outputSupport
+    | checkSymbol symbol =>
+        have houtput := hmatch.2 .output
+        simp only [rule, ruleAt, threeRule, Action.Matches] at houtput
+        change ((before.tape .output).write
+          (.mark symbol)).nonblankPositions ⊆ _
+        have htape : (before.tape .output).write (.mark symbol) =
+            before.tape .output := by
+          exact (congrArg (before.tape .output).write houtput.symm).trans
+            (Tape.write_read (before.tape .output))
+        rw [htape]
+        exact hinvariant.outputSupport
+    | moveRight =>
+        change ((before.tape .output).move .right).nonblankPositions ⊆ _
+        simpa [Tape.nonblankPositions] using hinvariant.outputSupport
+    | moveLeft =>
+        change ((before.tape .output).move .left).nonblankPositions ⊆ _
+        simpa [Tape.nonblankPositions] using hinvariant.outputSupport
 
 /-- The concrete trace generated by Table 1's copy schedule. -/
 def copyTrace {source : Machine SourceControl Symbol}
