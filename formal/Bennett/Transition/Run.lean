@@ -58,6 +58,10 @@ def HaltsIn (step : PartialStep α) (n : Nat) (start : α) : Prop :=
 def Terminates (step : PartialStep α) (start : α) : Prop :=
   ∃ n, step.HaltsIn n start
 
+/-- Every finite prefix can execute successfully. -/
+def RunsForever (step : PartialStep α) (start : α) : Prop :=
+  ∀ n, ∃ finish, step.Runs n start finish
+
 @[simp]
 theorem runs_zero_iff (step : PartialStep α) (start finish : α) :
     step.Runs 0 start finish ↔ start = finish := by

@@ -3,17 +3,30 @@
 This directory contains the pinned Lean 4 formalization project for Bennett's
 *Logical Reversibility of Computation*.
 
-The current Stage 1 root is deliberately small:
+The current public root contains the completed Stage 2 foundations:
 
 ```text
 Bennett.lean
-└── Bennett/Prelude.lean
+└── Bennett/
+    ├── Prelude.lean
+    ├── Transition/
+    │   ├── Core.lean
+    │   ├── Run.lean
+    │   ├── Reachability.lean
+    │   └── API.lean
+    └── History/
+        ├── Core.lean
+        ├── Run.lean
+        ├── Audit.lean       # diagnostic; not publicly re-exported
+        └── API.lean
 ```
 
-From this directory, build the narrow leaf and public root with:
+From this directory, representative focused and public builds are:
 
 ```sh
-lake build Bennett.Prelude
+lake build Bennett.Transition.Run
+lake build Bennett.History.Run
+lake build Bennett.History.Audit
 lake build Bennett
 ```
 

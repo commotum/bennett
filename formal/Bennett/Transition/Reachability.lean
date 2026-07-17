@@ -23,6 +23,22 @@ abbrev ReachableFrom (step : PartialStep α) (start finish : α) : Prop :=
 def reachableSet (step : PartialStep α) (start : α) : Set α :=
   {finish | step.ReachableFrom start finish}
 
+/-- Reachability from any member of an initial set. -/
+def ReachableFromSet (step : PartialStep α) (initials : Set α) (finish : α) : Prop :=
+  ∃ start ∈ initials, step.ReachableFrom start finish
+
+/-- All states reachable from a set of accepted initial states. -/
+def reachableSetFrom (step : PartialStep α) (initials : Set α) : Set α :=
+  {finish | step.ReachableFromSet initials finish}
+
+/-- Predecessor uniqueness on states reachable from a fixed initial state. -/
+def ReachablyReversible (step : PartialStep α) (initial : α) : Prop :=
+  step.ReversibleOn (step.reachableSet initial)
+
+/-- Predecessor uniqueness on states reachable from any accepted initial state. -/
+def ReachablyReversibleFrom (step : PartialStep α) (initials : Set α) : Prop :=
+  step.ReversibleOn (step.reachableSetFrom initials)
+
 /-- An exact finite run yields mathlib reachability. -/
 theorem Runs.reachable {step : PartialStep α} {n : Nat} {start finish : α}
     (hrun : step.Runs n start finish) : step.ReachableFrom start finish := by
@@ -66,6 +82,16 @@ theorem reachableSet_step {step : PartialStep α} {initial before after : α}
     (hbefore : before ∈ step.reachableSet initial) (hstep : step before = some after) :
     after ∈ step.reachableSet initial :=
   ReachableFrom.step hbefore hstep
+
+theorem reachableSetFrom_initial {step : PartialStep α} {initials : Set α} {initial : α}
+    (hinitial : initial ∈ initials) : initial ∈ step.reachableSetFrom initials :=
+  ⟨initial, hinitial, step.reachable_refl initial⟩
+
+theorem reachableSetFrom_step {step : PartialStep α} {initials : Set α}
+    {before after : α} (hbefore : before ∈ step.reachableSetFrom initials)
+    (hstep : step before = some after) : after ∈ step.reachableSetFrom initials := by
+  obtain ⟨initial, hinitial, hreach⟩ := hbefore
+  exact ⟨initial, hinitial, hreach.step hstep⟩
 
 /-- Project termination to mathlib's potentially divergent evaluator. -/
 theorem terminates_iff_eval_dom (step : PartialStep α) (start : α) :
