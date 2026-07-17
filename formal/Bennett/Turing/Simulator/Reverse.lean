@@ -210,6 +210,151 @@ theorem OnlyReverseRules.append (source : Machine SourceControl Symbol)
   rw [List.mem_append] at hmem
   exact hmem.elim (hfirst rule) (hsecond rule)
 
+/-!
+## Run-level compute/retrace schedules
+-/
+
+/--
+An exact `n`-step source run generates a `2n`-rule forward schedule and a
+`2n`-rule reverse cleanup schedule.  Cleanup retains an arbitrary copied output
+tape whose stationary head scans blank.
+-/
+theorem forward_reverse_scheduled_of_run
+    [DecidableEq SourceControl] [DecidableEq Symbol]
+    (source : Machine SourceControl Symbol)
+    {n : Nat}
+    {before after : Bennett.Turing.Configuration SourceControl Symbol}
+    (history : List source.RuleId) (copiedOutput : Tape Symbol)
+    (houtput : copiedOutput.read = .blank)
+    (hrun : source.step.Runs n before after) :
+    ∃ finalHistory forwardRules reverseRules,
+      finalHistory.length = history.length + n ∧
+      forwardRules.length = 2 * n ∧ reverseRules.length = 2 * n ∧
+      Quadruple.Scheduled forwardRules
+        (forwardConfiguration source
+          { current := before, history := history })
+        (forwardConfiguration source
+          { current := after, history := finalHistory }) ∧
+      Quadruple.Scheduled reverseRules
+        (reverseConfiguration source
+          { current := after, history := finalHistory } copiedOutput)
+        (reverseConfiguration source
+          { current := before, history := history } copiedOutput) ∧
+      OnlyForwardRules source forwardRules ∧
+      OnlyReverseRules source reverseRules := by
+  induction n generalizing before history with
+  | zero =>
+      have hbefore : before = after :=
+        (PartialStep.runs_zero_iff source.step before after).mp hrun
+      subst before
+      exact ⟨history, [], [], by simp, by simp, by simp, rfl, rfl,
+        by simp [OnlyForwardRules], by simp [OnlyReverseRules]⟩
+  | succ n ih =>
+      obtain ⟨next, hstep, htail⟩ :=
+        (PartialStep.runs_succ_iff source.step n before after).mp hrun
+      unfold Machine.step at hstep
+      obtain ⟨ruleId, hselect, hnext⟩ := Option.map_eq_some_iff.mp hstep
+      have hmatches := source.select_matches before hselect
+      have hnextEq : (source.rule ruleId).execute before = next := hnext
+      subst next
+      obtain ⟨finalHistory, forwardTail, reverseTail, hhistory,
+          hforwardLength, hreverseLength, hforwardTail, hreverseTail,
+          hforwardOnly, hreverseOnly⟩ :=
+        ih (ruleId :: history) htail
+      refine ⟨finalHistory,
+        forwardPairRules source ruleId ++ forwardTail,
+        reverseTail ++ reversePairRules source ruleId,
+        ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+      · simp [hhistory, Nat.add_comm, Nat.add_left_comm]
+      · simp [forwardPairRules, hforwardLength]
+        omega
+      · simp [reversePairRules, hreverseLength]
+        omega
+      · exact Quadruple.Scheduled.append
+          (forwardPair_scheduled source ruleId
+            { current := before, history := history } hmatches)
+          hforwardTail
+      · exact Quadruple.Scheduled.append hreverseTail
+          (reversePair_scheduled source ruleId before history copiedOutput
+            hmatches houtput)
+      · exact OnlyForwardRules.append source
+          (onlyForwardRules_pair source ruleId) hforwardOnly
+      · exact OnlyReverseRules.append source hreverseOnly
+          (onlyReverseRules_pair source ruleId)
+
+/--
+For a nonempty normal-form run ending at the standard finish control, the
+newest physical history record is exactly the distinguished exit rule.  This
+is the checked junction precondition for the copy phase.
+-/
+theorem forward_reverse_scheduled_to_standard_finish
+    [DecidableEq SourceControl] [DecidableEq Symbol]
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    {n : Nat}
+    {before : Bennett.Turing.Configuration SourceControl Symbol}
+    (output : List Symbol)
+    (hrun : source.step.Runs (n + 1) before
+      (Standard.config normal.finish output)) :
+    ∃ history forwardRules reverseRules,
+      history.length = n ∧
+      forwardRules.length = 2 * (n + 1) ∧
+      reverseRules.length = 2 * (n + 1) ∧
+      Quadruple.Scheduled forwardRules
+        (forwardConfiguration source { current := before, history := [] })
+        (forwardConfiguration source
+          { current := Standard.config normal.finish output
+            history := normal.exitId :: history }) ∧
+      Quadruple.Scheduled reverseRules
+        (reverseConfiguration source
+          { current := Standard.config normal.finish output
+            history := normal.exitId :: history }
+          (Tape.ofWord output))
+        (reverseConfiguration source
+          { current := before, history := [] } (Tape.ofWord output)) ∧
+      OnlyForwardRules source forwardRules ∧
+      OnlyReverseRules source reverseRules := by
+  obtain ⟨middle, hprefix, hlast⟩ :=
+    (PartialStep.runs_add_iff source.step n 1 before
+      (Standard.config normal.finish output)).mp (by simpa using hrun)
+  have hstep : source.step middle =
+      some (Standard.config normal.finish output) := by
+    simpa [PartialStep.Runs, PartialStep.iterate] using hlast
+  unfold Machine.step at hstep
+  obtain ⟨ruleId, hselect, hfinal⟩ := Option.map_eq_some_iff.mp hstep
+  have hmatches := source.select_matches middle hselect
+  have htarget : (source.rule ruleId).target = normal.finish := by
+    have hcontrol := congrArg Bennett.Turing.Configuration.control hfinal
+    simpa using hcontrol
+  have hid : ruleId = normal.exitId :=
+    normal.exit_only_rule_to_finish ruleId htarget
+  subst ruleId
+  obtain ⟨history, forwardPrefix, reversePrefix, hhistory,
+      hforwardLength, hreverseLength, hforwardPrefix, hreversePrefix,
+      hforwardOnly, hreverseOnly⟩ :=
+    forward_reverse_scheduled_of_run source ([] : List source.RuleId)
+      (Tape.ofWord output) (Tape.read_ofWord output) hprefix
+  have hforwardLast := forwardPair_scheduled source normal.exitId
+    { current := middle, history := history } hmatches
+  have hreverseLast := reversePair_scheduled source normal.exitId middle history
+    (Tape.ofWord output) hmatches (Tape.read_ofWord output)
+  rw [hfinal] at hforwardLast hreverseLast
+  refine ⟨history,
+    forwardPrefix ++ forwardPairRules source normal.exitId,
+    reversePairRules source normal.exitId ++ reversePrefix,
+    ?_, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simpa using hhistory
+  · simp [hforwardLength, forwardPairRules]
+    omega
+  · simp [hreverseLength, reversePairRules]
+    omega
+  · exact Quadruple.Scheduled.append hforwardPrefix hforwardLast
+  · exact Quadruple.Scheduled.append hreverseLast hreversePrefix
+  · exact OnlyForwardRules.append source hforwardOnly
+      (onlyForwardRules_pair source normal.exitId)
+  · exact OnlyReverseRules.append source
+      (onlyReverseRules_pair source normal.exitId) hreverseOnly
+
 /-- Reverse erasure uses exactly the inverse tape actions of forward recording. -/
 theorem reverseEraseRule_action (source : Machine SourceControl Symbol)
     (ruleId : source.RuleId) (index : TapeId) :

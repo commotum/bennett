@@ -15,13 +15,14 @@ namespace Bennett.Turing.Simulator.Copy
 variable {SourceControl Symbol : Type}
   [DecidableEq SourceControl] [DecidableEq Symbol]
 
-def rule {source : Machine SourceControl Symbol}
-    (normal : Standard.BennettNormalForm source) :
+/-- Copy rules with their two genuine boundary parameters exposed. -/
+def ruleAt (source : Machine SourceControl Symbol) (finish : SourceControl)
+    (terminal : source.RuleId) :
     CopyRuleId Symbol → Simulator.Rule source
   | .enter =>
-      threeRule (.forward normal.finish) .copyRightMove
+      threeRule (.forward finish) .copyRightMove
         (.rewrite .blank .blank)
-        (.rewrite (.mark normal.exitId) (.mark normal.exitId))
+        (.rewrite (.mark terminal) (.mark terminal))
         (.rewrite .blank .blank)
   | .moveRight =>
       threeRule .copyRightMove .copyRightRead
@@ -29,12 +30,12 @@ def rule {source : Machine SourceControl Symbol}
   | .copySymbol symbol =>
       threeRule .copyRightRead .copyRightMove
         (.rewrite (.mark symbol) (.mark symbol))
-        (.rewrite (.mark normal.exitId) (.mark normal.exitId))
+        (.rewrite (.mark terminal) (.mark terminal))
         (.rewrite .blank (.mark symbol))
   | .turn =>
       threeRule .copyRightRead .copyLeftMove
         (.rewrite .blank .blank)
-        (.rewrite (.mark normal.exitId) (.mark normal.exitId))
+        (.rewrite (.mark terminal) (.mark terminal))
         (.rewrite .blank .blank)
   | .moveLeft =>
       threeRule .copyLeftMove .copyLeftRead
@@ -42,13 +43,19 @@ def rule {source : Machine SourceControl Symbol}
   | .checkSymbol symbol =>
       threeRule .copyLeftRead .copyLeftMove
         (.rewrite (.mark symbol) (.mark symbol))
-        (.rewrite (.mark normal.exitId) (.mark normal.exitId))
+        (.rewrite (.mark terminal) (.mark terminal))
         (.rewrite (.mark symbol) (.mark symbol))
   | .exit =>
-      threeRule .copyLeftRead (.reverse normal.finish)
+      threeRule .copyLeftRead (.reverse finish)
         (.rewrite .blank .blank)
-        (.rewrite (.mark normal.exitId) (.mark normal.exitId))
+        (.rewrite (.mark terminal) (.mark terminal))
         (.rewrite .blank .blank)
+
+/-- Normal-form specialization used by the complete simulator. -/
+def rule {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source) :
+    CopyRuleId Symbol → Simulator.Rule source :=
+  ruleAt source normal.finish normal.exitId
 
 def configuration (source : Machine SourceControl Symbol)
     (control : Control SourceControl source.RuleId)

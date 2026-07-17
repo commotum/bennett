@@ -91,6 +91,15 @@ theorem runs_trans {step : PartialStep α} {m n : Nat} {start middle finish : α
   rw [Runs, iterate_add, hfirst]
   exact hsecond
 
+/-- Every shorter prefix of a successful exact run also succeeds. -/
+theorem exists_prefix_of_runs {step : PartialStep α} {m n : Nat}
+    {start finish : α} (hle : m ≤ n) (hrun : step.Runs n start finish) :
+    ∃ middle, step.Runs m start middle := by
+  obtain ⟨extra, rfl⟩ := Nat.exists_eq_add_of_le hle
+  obtain ⟨middle, hprefix, _⟩ :=
+    (runs_add_iff step m extra start finish).mp hrun
+  exact ⟨middle, hprefix⟩
+
 theorem runs_deterministic {step : PartialStep α} {n : Nat} {start finish₁ finish₂ : α}
     (h₁ : step.Runs n start finish₁) (h₂ : step.Runs n start finish₂) :
     finish₁ = finish₂ :=
@@ -129,6 +138,42 @@ theorem AreInverses.iterate_reversible {forward backward : PartialStep α}
     (hinv : forward.AreInverses backward) (n : Nat) :
     (forward.iterate n).Reversible :=
   (hinv.iterate n).forward_reversible
+
+/-- A partial computation cannot both halt and admit every finite prefix. -/
+theorem not_runsForever_of_terminates {step : PartialStep α} {start : α}
+    (hterminates : step.Terminates start) : ¬step.RunsForever start := by
+  rintro hforever
+  obtain ⟨n, finish, hrun, hhalt⟩ := hterminates
+  obtain ⟨after, hlong⟩ := hforever (n + 1)
+  obtain ⟨middle, hprefix, hlast⟩ :=
+    (runs_add_iff step n 1 start after).mp (by simpa using hlong)
+  have hmiddle : finish = middle := runs_deterministic hrun hprefix
+  subst middle
+  have hstep : ∃ next, step finish = some next := by
+    rw [Runs] at hlast
+    exact ⟨after, by simpa [iterate] using hlast⟩
+  obtain ⟨next, hnext⟩ := hstep
+  rw [hhalt] at hnext
+  contradiction
+
+/-- For executable partial steps, divergence is exactly nontermination. -/
+theorem runsForever_iff_not_terminates (step : PartialStep α) (start : α) :
+    step.RunsForever start ↔ ¬step.Terminates start := by
+  constructor
+  · intro hforever hterminates
+    exact not_runsForever_of_terminates hterminates hforever
+  · intro hnot n
+    induction n with
+    | zero => exact ⟨start, runs_refl step start⟩
+    | succ n ih =>
+        obtain ⟨middle, hprefix⟩ := ih
+        cases hnext : step middle with
+        | none =>
+            exact False.elim (hnot ⟨n, middle, hprefix, hnext⟩)
+        | some next =>
+            refine ⟨next, ?_⟩
+            have hone : step.Runs 1 middle next := runs_one hnext
+            simpa using runs_trans hprefix hone
 
 end PartialStep
 end Bennett
