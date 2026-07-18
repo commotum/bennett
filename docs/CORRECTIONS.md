@@ -1,8 +1,8 @@
 # Corrections, Ambiguities, and Failed Obligations
 
-This is a cumulative log.  An entry records a source issue before dependent Lean
-results are stated.  “Open” means the repaired theorem has not yet been proved;
-it does not license silently using the proposed repair.
+This is a cumulative log.  Each entry records a source issue and the disposition
+of its dependent Lean results.  An **unresolved** obligation has not been proved
+and may not be used silently as though its proposed repair were available.
 
 ## C-001 — Range-overlap transcription is ill-typed
 
@@ -149,9 +149,11 @@ it does not license silently using the proposed repair.
   and on `S₂` computing the original input from the output.
 - **Status:** The abstract blank-copy/equality-checked inverse is formalized in
   Stage 3 (`Copy.blankEquiv` and `observedEquiv`).  Stage 6 proves the concrete
-  standard-tape loop and exact head invariant.  The full seven-stage Table 2
-  composition remains open because it additionally requires concrete forward
-  and inverse realizations of both `S₁` and the recovery machine `S₂`.
+  standard-tape loop and exact head invariant.  The result is partial: the full
+  seven-stage Table 2 composition is unresolved because it additionally
+  requires specified forward and inverse realizations of both `S₁` and the
+  recovery machine `S₂`, plus a composed proof of all intermediate tape/head
+  invariants.
 
 ## C-007 — Segmented optimum is continuous and omits costs
 

@@ -139,7 +139,7 @@ has exactly `segments - 1` intermediate dumps.
 ```lean
 Turing.Simulator.central_correctness :
   normal.accepts input →
-  Standard.ComputesIn source normal.start normal.finish v input output →
+  Turing.Standard.ComputesIn source normal.start normal.finish v input output →
   Turing.Simulator.SimulationCertificate normal enumerate v input output
 ```
 
@@ -152,12 +152,13 @@ of termination equivalence for accepted standard inputs.
 Syntax and resource declarations include:
 
 - `Turing.Simulator.control_card` and
-  `tableRuleId_card_fullAlphabet` for `2f + 2N + 4` and `4N + 2z + 3`;
+  `Turing.Simulator.tableRuleId_card_fullAlphabet` for `2f + 2N + 4` and
+  `4N + 2z + 3`;
 - `Turing.Simulator.Resource.fullRules_length` for `4v + 4λ + 5`;
 - `Turing.Simulator.HistorySpace.concreteTrace_history_cost` for history;
 - `Turing.Simulator.Copy.Resource.copyTrace_work_footprintCard` for copying; and
-- `Turing.Simulator.Resource.WorkSupport`
-  for the corrected work-footprint `s`/`s + 1` dichotomy.
+- `Turing.Simulator.Resource.WorkSupport.fullTrace_work_footprintPositions_eq_insert_right`
+  and its cardinality cases for the corrected `s`/`s + 1` dichotomy.
 
 ## Cost conventions
 

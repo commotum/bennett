@@ -46,8 +46,10 @@ Or use a narrow stable API:
 ```lean
 import Bennett.Transition.API
 import Bennett.History.API
+import Bennett.Copy.API
 import Bennett.Uncompute.API
 import Bennett.Checkpoint.API
+import Bennett.Turing.API
 import Bennett.Turing.Simulator.API
 ```
 

@@ -1,9 +1,9 @@
 # Formalization Conventions and Scope
 
-This document fixes project-wide boundaries before machine definitions are
-written.  A convention marked **selected** constrains later modules.  A choice
-marked **owned by Stage N** remains deliberately open until that stage proves it
-fits the required semantics.
+This document records the project-wide boundaries used by the completed
+library.  A convention marked **selected** constrains the exported results; an
+explicitly unresolved choice remains unavailable rather than becoming a silent
+assumption.
 
 ## Source and Trust Boundary
 
@@ -227,6 +227,15 @@ fits the required semantics.
   source-machine assumption ensures any halting standard run ends in `A_f`.
 - **Selected:** the central theorem proves both halting directions on accepted
   standard inputs; a one-way terminating-run simulation is not sufficient.
+- **Selected and formalized in Stage 6:** `Simulator.central_correctness`
+  assumes decidable equality for source controls and symbols, a finite symbol
+  type, `normal : Standard.BennettNormalForm source`, an explicit enumeration
+  equivalence for the constructed finite target table, an acceptance proof for
+  the standard input, and `Standard.ComputesIn` evidence for the exact source
+  run and halt.  `Simulator.terminates_iff_source` uses the same normal form,
+  enumeration, and accepted-input scope.  Neither theorem covers malformed or
+  unaccepted inputs, and neither supplies the unresolved compiler that would
+  put an arbitrary machine into Bennett normal form.
 - **Selected:** initial and final configurations specify every tape, head, and
   control state.  The informal judgment `R : (I;B;B) → (I;B;P)` is only a
   documented abbreviation after this stronger result exists.
