@@ -112,6 +112,7 @@ Focused builds:
 ```text
 cd formal && lake build Bennett.Checkpoint.Core
 cd formal && lake build Bennett.Checkpoint.Cost
+cd formal && lake build Bennett.Checkpoint.Plan
 cd formal && lake build Bennett.Checkpoint.Audit Bennett.Checkpoint.API Bennett
 ```
 

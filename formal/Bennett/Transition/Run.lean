@@ -139,7 +139,7 @@ theorem AreInverses.iterate_reversible {forward backward : PartialStep α}
     (forward.iterate n).Reversible :=
   (hinv.iterate n).forward_reversible
 
-/-- A partial computation cannot both halt and admit every finite prefix. -/
+/-- A partial computation cannot both halt and run every finite prefix. -/
 theorem not_runsForever_of_terminates {step : PartialStep α} {start : α}
     (hterminates : step.Terminates start) : ¬step.RunsForever start := by
   rintro hforever
