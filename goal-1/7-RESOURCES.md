@@ -1,6 +1,6 @@
 # 7-RESOURCES
 
-**Status:** In progress.
+**Status:** Completed.
 
 ## Current Facts
 
@@ -12,14 +12,25 @@
 - `ExecutionTrace` counts successful transitions, retains both endpoints, and
   distinguishes visited, ever-nonblank, footprint, peak-nonblank, and
   peak-active positions.
-- The physical history encoding of a `v`-record stack occupies nonblank cells
-  `0,…,v-1`, has head `v-1`, and starts/finishes blank at head `-1`.
-- The copy sweep visits the closed interval `[-1,λ]` on both work and output,
-  including two distinct delimiter cells even when `λ=0`.
-- Bennett never defines tape 1's `s`.  The construction's exact visited set is
-  expected to be the source-run work-head set union `[-1,λ]`; it equals a bare
-  source parameter `s` only when that parameter already includes the complete
-  final-output delimiter traversal.
+- The canonical physical history trace for `v` records has visited set and
+  footprint `Icc (-1) (v-1)`, each of cardinality `v+1`; exactly `Ico 0 v`
+  is ever nonblank, and the peak number of nonblank cells is `v`.
+- The copy sweep visits the closed interval `Icc (-1) λ` on both work and
+  output.  Their copy-phase footprint has cardinality `λ+2`, their
+  ever-nonblank set is `Ico 0 λ`, and their peak nonblank/active counts are
+  `λ` and `λ+1`.  When `λ=0`, the footprint still has the two delimiter
+  cells while the peak counts are `0` and `1`.
+- The complete target work-head visited set is the raw source head-visited set
+  union `Icc (-1) λ`.  This is not generally a one-cell extension because
+  the source need not have scanned every final-output data cell.
+- The complete target work ever-nonblank set is exactly the source trace's
+  ever-nonblank set.  Its footprint is therefore exactly the source footprint
+  union `Icc (-1) λ`; standard endpoints simplify this to insertion of only
+  the right delimiter `λ` into the source footprint.
+- If `s` means the cardinality of the source footprint, the complete target
+  work footprint is exactly `s` when `λ` already belongs to that footprint
+  and exactly `s+1` otherwise.  Bennett does not define `s`, so this conditional
+  dichotomy replaces the paper's unqualified tape-1 equality.
 
 ## Updated Assumptions
 
@@ -30,8 +41,9 @@
   semantic `Runs` theorem alone determines transition count and endpoints, not
   the intermediate resource profile.
 - Treat source work usage as a supplied measured trace rather than imposing a
-  separate bound convention.  Derive Bennett's `s` statement only as a
-  corollary under the exact inclusion/equality premise it needs.
+  separate bound convention.  Bennett's scalar `s` statement is interpreted
+  only after defining `s` as the source-footprint cardinality and stating
+  whether that footprint contains the final right delimiter.
 - Count an execution with `k` transitions as `k+1` trace states.  A failed halt
   query is not a transition and adds no trace state.
 - Keep permanent output, temporary history, and source work storage separate;
@@ -60,22 +72,21 @@ ambiguous tape-1 equality with the strongest exact measured result.
 - State conditional corollaries explaining precisely when Bennett's work-tape
   number is `s`, when only an `s+1` upper bound follows, and why neither follows
   from an undefined `s` alone.
-- Collect the verified syntax/time/space facts in a reusable resource
-  certificate and export it through the simulator API.
+- Collect the verified syntax/time/space facts in reusable resource proof
+  leaves and export them through the simulator API.
 
 ## Build Structure
 
-- `formal/Bennett/Turing/Simulator/Resource.lean`: proof leaf for explicit
-  schedule traces, phase projections, exact tape measures, and the resource
-  certificate.  It imports the stable simulator schedule leaves but is not an
-  execution dependency of `Correctness`.
-- `formal/Bennett/Turing/Simulator/ResourceAudit.lean` if exhaustive examples
-  or `#print axioms` would otherwise burden the public proof leaf.
-- `formal/Bennett/Turing/Simulator/API.lean`: add the new resource leaf only
-  after its focused build is stable.
-- Focused build: `cd formal && lake build Bennett.Turing.Simulator.Resource`.
-  Adjacent builds: simulator API, Turing API, root `Bennett`, and the relevant
-  audit leaf after public export.
+- `formal/Bennett/Turing/Simulator/Resource.lean`: explicit schedule traces,
+  exact copy-phase costs, and the canonical physical history geometry.
+- `formal/Bennett/Turing/Simulator/WorkResource.lean`: raw source and target
+  head paths, explicit full schedules, transition counts, and exact head-visit
+  unions.
+- `formal/Bennett/Turing/Simulator/WorkSupport.lean`: preservation of work
+  support and the exact full-trace footprint and `s`/`s+1` dichotomy.
+- `formal/Bennett/Turing/Simulator/Audit.lean`: executable edge cases and
+  principal axiom audits without burdening the public proof leaves.
+- `formal/Bennett/Turing/Simulator/API.lean`: thin public resource re-export.
 
 ## Boundary Checks
 
@@ -104,4 +115,41 @@ ambiguous tape-1 equality with the strongest exact measured result.
 
 ## Stage Results
 
-Pending focused integration and audit.
+- `Quadruple.executionTrace` packages an explicit rule schedule as a nonempty
+  trace with exactly one more state than transitions.  The constructed full
+  schedule has `2v` forward, `4λ+5` copy, and `2v` reverse rules, hence exact
+  target time `4v+4λ+5` and `4v+4λ+6` trace states.
+- `Simulator.Copy.Resource` proves that work and output heads each visit
+  `Tape.delimiterTraversal output = Icc (-1) λ`, of cardinality `λ+2`.
+  For both tapes the copy trace ever-nonblank set is `Ico 0 λ`, the footprint
+  is `Icc (-1) λ`, maximum nonblank cells is `λ`, and maximum active cells
+  is `λ+1`.  The history head is stationary and has visited-cardinality one
+  during copying.  `copyTrace_empty_data_cost` checks the `λ=0` edge case.
+- `Simulator.HistorySpace.concreteTrace_history_cost` proves the canonical
+  physical history trace has visited set and footprint `Icc (-1) (v-1)` with
+  cardinality `v+1`, ever-nonblank set `Ico 0 v`, and peak nonblank count `v`.
+  Geometry lemmas identify these shapes with the actual forward, intermediate,
+  copy, and reverse configurations; the history result is not inferred from
+  transition count alone.
+- `Simulator.Resource.exists_fullRules_scheduled_of_computesIn` extracts the
+  chronological intrinsic rule IDs from a standard computation and produces
+  an exact full Table 1 schedule using only constructed table rules.
+  `fullTrace_work_visitedPositions` proves the target work-head visited set is
+  the source head-visited set union `Icc (-1) λ`; the output-head visited set
+  is exactly `Icc (-1) λ`.
+- `Simulator.Resource.WorkSupport.fullTrace_work_everNonblankPositions` proves
+  that the full target creates no new nonblank work position.
+  `fullTrace_work_footprintPositions` then gives source footprint union
+  `Icc (-1) λ`, and `fullTrace_work_footprintPositions_eq_insert_right`
+  simplifies it to insertion of only `λ`.  The two footprint-card theorems
+  prove exact `s` versus `s+1` according as that delimiter was already present.
+- The paper's `v+1` and `λ+2` are verified as distinct-cell
+  visited/footprint counts, not as simultaneous nonblank allocation.  Permanent
+  output contains `λ` nonblank cells; peak nonblank history is `v`.
+  Whole-run peak-active formulas are intentionally not substituted for these
+  metrics: an additional theorem would need to calculate the live
+  per-configuration active sets rather than merely their union.
+- All exact formulas come from finite syntax or explicit schedules and include
+  endpoint blanks.  No space result is inferred from semantic correctness.
+  The Stage 7 proof leaves build without proof holes or project axioms; the
+  principal audits use only `propext`, `Classical.choice`, and `Quot.sound`.

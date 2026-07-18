@@ -175,13 +175,100 @@ theorem tiny_simulator_runs_17 :
   simpa using Simulator.runs_of_computesIn
     tinyNormal tinyEnumeration tiny_computes_empty
 
+/-!
+## Exact resource checks
+
+These checks instantiate the generic Stage 7 results at the same three-step
+computation.  The empty copied word is also the boundary case in which there
+are no nonblank data cells, although both data heads still scan two delimiter
+cells.
+-/
+
+/-- Empty copying takes five transitions and has the exact zero-data peaks. -/
+theorem tiny_empty_copy_resource :
+    let trace := Simulator.Copy.Resource.copyTrace tinyNormal
+      (Tape.blankAt (-1) : Tape tinySource.RuleId) []
+    trace.transitionCount = 5 ∧
+      trace.states.length = 6 ∧
+      (ExecutionTrace.footprintPositions
+        (fun state : Simulator.Configuration tinySource => state.tape .work)
+        trace).card = 2 ∧
+      ExecutionTrace.maximumNonblankCells
+        (fun state : Simulator.Configuration tinySource => state.tape .work)
+        trace = 0 ∧
+      ExecutionTrace.maximumActiveCells
+        (fun state : Simulator.Configuration tinySource => state.tape .work)
+        trace = 1 := by
+  dsimp only
+  obtain ⟨_, _, hfootprint, _, hnonblank, _, hactive, _⟩ :=
+    Simulator.Copy.Resource.copyTrace_empty_data_cost tinyNormal
+      (Tape.blankAt (-1) : Tape tinySource.RuleId)
+  exact ⟨by simp, by simp,
+    by rw [hfootprint, Int.card_Icc]; omega,
+    hnonblank, hactive⟩
+
+/-- Three source steps use exactly four visited history cells and three records. -/
+theorem tiny_history_resource :
+    ExecutionTrace.visitedPositions Simulator.HistorySpace.Shape.tape
+        (Simulator.HistorySpace.trace 3 5) = Finset.Icc (-1) 2 ∧
+      (ExecutionTrace.visitedPositions Simulator.HistorySpace.Shape.tape
+        (Simulator.HistorySpace.trace 3 5)).card = 4 ∧
+      ExecutionTrace.everNonblankPositions Simulator.HistorySpace.Shape.tape
+        (Simulator.HistorySpace.trace 3 5) = Finset.Ico 0 3 ∧
+      ExecutionTrace.maximumNonblankCells Simulator.HistorySpace.Shape.tape
+        (Simulator.HistorySpace.trace 3 5) = 3 := by
+  simpa using Simulator.HistorySpace.concreteTrace_history_cost 3 0
+
+/-- The tiny complete trace realizes the corrected exact work-footprint law. -/
+theorem tiny_full_work_footprint :
+    ∃ ruleIds : List tinySource.RuleId,
+      ruleIds.length = 3 ∧
+      Machine.Resource.Scheduled tinySource ruleIds
+        (Standard.config tinyNormal.start [])
+        (Standard.config tinyNormal.finish []) ∧
+      Quadruple.Scheduled
+        (Simulator.Resource.fullRules tinyNormal ruleIds [])
+        (Simulator.initialConfiguration tinySource tinyNormal.start [])
+        (Simulator.finalConfiguration tinySource tinyNormal.start [] []) ∧
+      ExecutionTrace.footprintPositions
+          (fun state : Simulator.Configuration tinySource => state.tape .work)
+          (Quadruple.executionTrace
+            (Simulator.Resource.fullRules tinyNormal ruleIds [])
+            (Simulator.initialConfiguration tinySource tinyNormal.start [])) =
+        insert (0 : Int)
+          (ExecutionTrace.footprintPositions
+            Bennett.Turing.Configuration.tape
+            (Machine.Resource.executionTrace tinySource ruleIds
+              (Standard.config tinyNormal.start []))) := by
+  obtain ⟨ruleIds, hlength, hsource, hfull, _⟩ :=
+    Simulator.Resource.exists_fullRules_scheduled_of_computesIn
+      tinyNormal tiny_computes_empty
+  refine ⟨ruleIds, hlength, hsource, hfull, ?_⟩
+  simpa using
+    Simulator.Resource.WorkSupport.fullTrace_work_footprintPositions_eq_insert_right
+      tinyNormal ruleIds [] [] hsource
+
 #print axioms tiny_computes_empty
 #print axioms tiny_table_rule_count
 #print axioms tiny_table_syntactically_reversible
 #print axioms tiny_simulator_runs_17
+#print axioms tiny_empty_copy_resource
+#print axioms tiny_history_resource
+#print axioms tiny_full_work_footprint
 #print axioms Bennett.Turing.Simulator.scheduled_of_computesIn
 #print axioms Bennett.Turing.Simulator.machineWithEnumeration_syntacticallyReversible
 #print axioms Bennett.Turing.Simulator.terminates_iff_source
 #print axioms Bennett.Turing.Simulator.central_correctness
+#print axioms Simulator.Copy.Resource.copyTrace_empty_data_cost
+#print axioms Simulator.Copy.Resource.copyTrace_work_footprintPositions
+#print axioms Simulator.HistorySpace.concreteTrace_history_cost
+#print axioms Simulator.Resource.exists_fullRules_scheduled_of_computesIn
+
+open Simulator.Resource.WorkSupport
+
+#print axioms fullTrace_work_footprintPositions
+#print axioms fullTrace_work_footprintPositions_eq_insert_right
+#print axioms fullTrace_work_footprintCard_of_right_mem
+#print axioms fullTrace_work_footprintCard_of_right_not_mem
 
 end Bennett.Turing.SimulatorAudit

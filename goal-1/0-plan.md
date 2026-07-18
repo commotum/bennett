@@ -48,14 +48,16 @@ excluded rather than silently weakened.
   transitive dependencies.
 - The paper's main construction uses read-write-shift quintuples for the source,
   read/write-or-shift quadruples for the reversible target, and three tapes.
-- Stage 6 reconstructs the complete Table 1 syntax and proves the paper's exact
+- Stages 6–7 reconstruct the complete Table 1 syntax and prove the paper's exact
   target counts `2f + 2N + 4` states, `4N + 2z + 3` quadruples, alphabet sizes
-  `(z,N+1,z)`, and run time `4v + 4λ + 5`.  Stage 7 still owns the separate
-  visited/nonblank/active-cell audit.
+  `(z,N+1,z)`, and run time `4v + 4λ + 5`.  The space audit keeps raw head
+  visits, ever-nonblank support, their footprint union, maximum nonblank cells,
+  and maximum active cells as distinct metrics.
 - The complete PDF and both table images have been audited.  Table 1's state,
   rule, alphabet, and time arithmetic is internally correct under its atomic
-  history-symbol/fresh-state conventions; its tape-1 space equality remains
-  undefined and potentially off by a right-delimiter cell.
+  history-symbol/fresh-state conventions.  If `s` is the source-footprint
+  cardinality, its tape-1 result is exactly `s` when the final right delimiter
+  was already in that footprint and exactly `s+1` otherwise.
 - The Markdown range-overlap formula at line 94 is a conversion error: the PDF
   correctly tests unprimed read fields for `/`.  Syntactic rule non-overlap is a
   sufficient unique-rule discipline but is stronger than extensional semantic
@@ -79,16 +81,16 @@ excluded rather than silently weakened.
   exact forward/copy/retrace schedules (including empty output), two-way halting
   equivalence on accepted standard inputs, and a central certificate naming
   every initial/final tape, head, and phase-tagged control state.
+- Stage 7 proves exact copy-phase work/output geometry: visited and footprint
+  cardinality `λ+2`, ever-nonblank and peak-nonblank size `λ`, and peak active
+  size `λ+1`.  Its canonical physical history trace has footprint `v+1` and
+  peak nonblank size `v`.
+- For a standard full schedule, Stage 7 proves target work footprint equals the
+  source footprint union `Icc (-1) λ`, equivalently insertion of the final
+  right delimiter `λ`; the full target creates no new nonblank work position.
 
 ## Working Assumptions to Test
 
-- The exact full work-tape visited set should be the source execution trace's
-  visited set union the final-output delimiter traversal.  Any scalar `s`
-  corollary must state the inclusion/equality convention needed to reduce that
-  union; the paper supplies no such convention.
-- Copy and history phase projections can support exact visited/nonblank/active
-  measures, but they must be connected to the live schedule constructors by
-  geometry lemmas rather than treated as independent numerical models.
 - A segmented-history theorem needs a restart dump that includes control and
   head data as well as tape contents.  Its exact discrete cost should use
   unequal-segment rounding and `n-1` intermediate dumps before comparing with
@@ -302,7 +304,7 @@ compute-copy-uncompute behavior.
 
 ### 7-RESOURCES — Exact syntax, time, and space accounting
 
-**Status:** In progress.
+**Status:** Completed.
 
 #### Big Picture Objective
 
@@ -329,7 +331,7 @@ Verify or correct Bennett's exact complexity claims under the formal cost model.
 
 ### 8-CHECKPOINTS — Segmented history and bounded claims
 
-**Status:** Pending.
+**Status:** In progress.
 
 #### Big Picture Objective
 

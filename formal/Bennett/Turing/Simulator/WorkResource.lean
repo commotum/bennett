@@ -17,11 +17,11 @@ that the source never scanned.  Relative to the source footprint, it adds at
 most the right delimiter, so the checked bound is explicitly named as a target
 *head-visit* bound against a source *footprint*.
 
-This module does not claim equality between the complete target work tape's
-`everNonblankPositions` and the source trace's `everNonblankPositions`.  That
-requires a separate per-state support-correspondence proof across both the
-forward and reverse appended execution traces.  Consequently, no theorem here
-silently promotes the head-visit bound to a total work-footprint theorem.
+The separate leaf module `Bennett.Turing.Simulator.WorkSupport` proves the
+per-state support correspondence across the appended forward, copy, and
+reverse traces.  It upgrades these head-walk results to exact equality of
+source/target ever-nonblank work cells and to the corrected total
+work-footprint dichotomy (`s` or `s + 1`).
 -/
 
 namespace Bennett.Turing

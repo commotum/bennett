@@ -228,10 +228,34 @@ fits the required semantics.
 - **Selected and formalized in Stage 4:** `Tape.blank` means a blank tape with
   head at `0`, whereas `Tape.ofWord []` is blank with head at `-1`.  “Blank tape”
   in central theorem signatures must always include its head convention.
-- **Owned by Stage 7:** whether tape 1's paper parameter `s` counts the initial
-  head-scanned blank, and exact endpoint-blank conventions for all three tapes.
-  The paper explicitly reports `v+1` and `λ+2` on tapes 2 and 3, strongly
-  suggesting visited cells including endpoint blanks, but does not define `s`.
+- **Selected and formalized in Stage 7:** `visitedPositions` is the finite set
+  of positions scanned by a head, `everNonblankPositions` is the union of tape
+  supports over all trace states, and `footprintPositions` is their union.
+  `maximumNonblankCells` and `maximumActiveCells` are separate per-state maxima;
+  active positions are the current support with the current head inserted.
+- **Selected and formalized in Stage 7:** the copy trace on both work and output
+  visits and footprints exactly `Icc (-1) λ`, of cardinality `λ+2`, while its
+  ever-nonblank set is `Ico 0 λ`.  Its maximum nonblank and active counts are
+  `λ` and `λ+1`; for `λ=0` these are `0` and `1` although the two delimiter
+  cells remain in the footprint.  The history head stays on one cell during
+  copying.
+- **Selected and formalized in Stage 7:** the canonical physical history trace
+  for `v` source steps visits and footprints `Icc (-1) (v-1)`, of cardinality
+  `v+1`; its ever-nonblank set is `Ico 0 v` and its maximum nonblank count is
+  `v`.  Thus the paper's `v+1` is a footprint count, not a simultaneous
+  nonblank count.
+- **Selected and formalized in Stage 7:** for a standard complete target trace,
+  raw work-head visits equal raw source-head visits union `Icc (-1) λ`, while
+  target ever-nonblank work positions equal the source trace's ever-nonblank
+  positions.  Consequently the target work footprint is source footprint union
+  `Icc (-1) λ`.  The initial and final standard endpoints already place the
+  left delimiter and all output data cells in the source footprint, so this
+  union is exactly insertion of the right delimiter `λ`.
+- **Selected correction to the paper's `s`:** if `s` denotes source-footprint
+  cardinality, complete target work-footprint cardinality is `s` when the right
+  delimiter `λ` already belongs to the source footprint and `s+1` otherwise.
+  No unconditional equality is reported because the paper never defines `s`.
+  This statement concerns footprint, not the smaller raw head-visited set.
 - **Selected:** asymptotic claims and exact equalities are separate results.
   Ignored dump-I/O time is an explicit assumption, never silently omitted.
 - **Selected:** Stage 3 proves exact component facts—`n` recorded forward steps,
@@ -241,8 +265,15 @@ fits the required semantics.
 - **Selected and formalized in Stage 6:** a standard source run of `v` steps
   producing a word of length `λ` induces a concrete Table 1 run of exactly
   `4v+4λ+5` quadruple transitions: `2v` forward, `4λ+5` copy, and `2v`
-  reverse.  Stage 7 separately derives visited/nonblank/active-cell formulas
-  from the displayed schedules.
+  reverse.  Stage 7 derives the resource formulas above from explicit
+  constructor-tag schedules and physical tape geometry, not from this semantic
+  run theorem.
+- **Selected:** permanent output, temporary history, source work, and endpoint
+  delimiters are reported separately.  In particular, a standard copied output
+  has `λ` permanent nonblank symbols but its copy footprint has `λ+2` cells;
+  a history peak has `v` nonblank records but its footprint has `v+1` cells.
+  Whole-run maximum-active formulas are not silently substituted for these
+  proved footprint/nonblank quantities.
 
 ## Build and Axiom Policy
 
