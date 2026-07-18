@@ -70,7 +70,10 @@ it does not license silently using the proposed repair.
   tape with head at the left delimiter `-1`, and proves its potential complete
   delimiter traversal has two cells (`λ+2 = 2`).  Stage 6's concrete
   `Copy.scheduled_encode` covers `[]` without an extra assumption and proves the
-  five-transition endpoint; the general schedule has length `4λ+5`.
+  five-transition endpoint; the general schedule has length `4λ+5`.  Stage 7's
+  `Copy.Resource.copyTrace_empty_data_cost` proves that the empty copy trace has
+  empty ever-nonblank support, two-cell work/output footprints `Icc (-1) 0`,
+  peak nonblank count zero, and peak active count one.
 
 ## C-004 — “About twice” conflicts with the target step unit
 
@@ -104,18 +107,32 @@ it does not license silently using the proposed repair.
   same endpoint convention.  Under ordinary distinct-scanned-cell accounting,
   the copy sweep scans the blank immediately right of the output even when the
   source computation never scanned it, so tape 1 can use `s+1` cells.
-- **Corrected formulation:** prove separate visited-cell and occupied/nonblank
-  statements with head/endpoint conventions explicit.  The robust tape-1
-  footprint is the union of the source-run footprint and the copy traversal of
-  the final standard output; an exact `s` follows only if `s` already includes
-  that traversal (in particular the right delimiter).
+- **Corrected formulation:** prove separate head-visited, ever-nonblank,
+  footprint, maximum-nonblank, and maximum-active statements with head/endpoint
+  conventions explicit.  For a standard computation with final output length
+  `λ`, the complete target work footprint is the source footprint union
+  `Icc (-1) λ`.  Standard endpoints already put the left delimiter and every
+  output data cell in the source footprint, so the union equals insertion of
+  the right delimiter `λ`.  If `s` is the source-footprint cardinality, the
+  exact result is `s` when `λ` was already present and `s+1` otherwise.
 - **Justification:** the measures differ on blank cells even for Table 1's trace.
-- **Consequences:** no exact space theorem is inferred from semantic simulation;
-  Stage 4 defines measures and Stage 7 audits the formulas.
-- **Status:** Stage 4 formalizes separate `visitedPositions`,
-  `everNonblankPositions`, `footprintPositions`, `maximumNonblankCells`, and
-  `maximumActiveCells`.  Stage 6 supplies the exact schedules; Stage 7 derives
-  their trace footprints and resolves the source-tape `s`/`s+1` question.
+- **Consequences:** no exact space theorem is inferred from semantic simulation.
+  The paper's `v+1` and `λ+2` are interpreted as footprint/visited counts,
+  whereas peak nonblank history and copied-data counts are `v` and `λ`.
+  Permanent output, temporary history, and work footprint remain separate.
+- **Status:** Corrected and formalized in Stage 7.  Stage 4 defines
+  `visitedPositions`, `everNonblankPositions`, `footprintPositions`,
+  `maximumNonblankCells`, and `maximumActiveCells`.
+  `Copy.Resource.copyTrace_work_footprintPositions_eq_Icc` and its output
+  analogue prove `Icc (-1) λ` with cardinality `λ+2`; the copy
+  maximum-nonblank and maximum-active theorems prove `λ` and `λ+1`.
+  `HistorySpace.concreteTrace_history_cost` proves history footprint cardinality
+  `v+1`, ever-nonblank cells `Ico 0 v`, and peak nonblank count `v`.
+  `Resource.fullTrace_work_visitedPositions` gives raw source head visits union
+  `Icc (-1) λ`, while
+  `Resource.WorkSupport.fullTrace_work_everNonblankPositions` proves no new
+  nonblank work position.  Its footprint-union, insert-right, and two cardinality
+  theorems prove the exact `s`/`s+1` dichotomy above.
 
 ## C-006 — Table 2 erasure is conditional inverse copying
 
