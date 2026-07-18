@@ -167,15 +167,38 @@ it does not license silently using the proposed repair.
   it total space; permanent input/output and working space are additional.  The
   earlier strict inequality and later equality cannot both describe the same
   unrounded expression uniformly.
-- **Corrected formulation:** first define an exact integer cost such as
-  `ceil(v/n) + (n-1)s` (or the construction-derived alternative), prove a bound
-  for an explicitly rounded `n`, and state dump-I/O assumptions in the time
-  theorem.  Retain `2√(vs)` as the continuous relaxation when appropriate.
-- **Justification:** elementary discrete optimization and actual checkpoint
-  layout, not the semantic simulation theorem.
-- **Consequences:** no exact checkpoint bound is exported before Stage 8; the
-  nested `log v` sentence remains speculative and excluded.
-- **Status:** Open (Stage 8).
+- **Corrected formulation:** a complete checkpoint includes every control,
+  tape, head, and phase component required to restart.  For `v` steps split
+  into a positive integer `n` of segments and a declared `s` cells per complete
+  checkpoint, the verified discrete temporary budget is
+  `v ⌈/⌉ n + (n-1)s`.  The paper-rounded convention
+  `v ⌈/⌉ n + ns` is exactly one `s`-cell dump higher.  Ideal checkpoint
+  cleanup takes four source-level passes; dump I/O is an explicit additive
+  parameter.  The ceiling-square-root segment choice has a proved
+  near-balanced bound but is not asserted to be the exact minimizer of the
+  rounded discrete objective.  The positive-real `2√(vs)` AM--GM theorem and
+  equality case are stated separately.
+- **Justification:** `Checkpoint.Plan` constructs the semantic segmentation
+  from exact source iterates and proves `n-1` higher-level dumps.
+  `Cost.SegmentPlan` constructs integer block lengths with maximum
+  `v ⌈/⌉ n`; `temporaryCells_eq` and
+  `paperRoundedCells_eq_temporaryCells_add_dumpCells` prove the two storage
+  formulas.  `checkpointTime_eq_two_unsegmented_add_dumpIO` exposes the omitted
+  traffic.  `temporaryCells_balanced_le` proves the rounded bound, while
+  `paperContinuousCells_lower_bound` and
+  `paperContinuousCells_at_sqrt_ratio` prove the separate real relaxation.
+- **Consequences:** the formal result measures temporary primary history plus
+  intermediate dumps, not total machine space.  Permanent input/output,
+  ordinary live work, concrete dump allocation, and a target-level dump-I/O
+  protocol remain separate or caller-parameterized.  No semantic theorem is
+  used to infer those physical costs.  The nested `log v`/quadratic-time
+  sentence still lacks a recursive schedule and remains speculative/excluded.
+- **Status:** Corrected, split, and formalized in Stage 8.
+  `recordedSegmentStage_apply_of_run` proves local generated-history cleanup;
+  `Plan.exists_completes_segmentPlan_with_dump_count` and
+  `Plan.computeCopyCleanup_segmentPlan_apply_of_run` prove the plan-driven
+  higher-level semantics; `Checkpoint.Cost` proves the discrete and continuous
+  cost statements above.
 
 ## C-008 — Rule-level and semantic reversibility must be related, not identified
 

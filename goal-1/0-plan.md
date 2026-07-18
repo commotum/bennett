@@ -88,15 +88,31 @@ excluded rather than silently weakened.
 - For a standard full schedule, Stage 7 proves target work footprint equals the
   source footprint union `Icc (-1) λ`, equivalently insertion of the final
   right delimiter `λ`; the full target creates no new nonblank work position.
+- Stage 8 defines complete restart checkpoints abstractly: the checkpoint type
+  must include control, tapes, heads, phase, and any other state needed to
+  resume.  A `HistoryRecorder` implementation of one segment erases every
+  primary-history record it generates and restores the caller's scratch
+  baseline exactly.
+- Stage 8's global checkpoint chain is a `PEquiv`; a full `n`-segment run keeps
+  the permanent original and uses exactly `n-1` intermediate dumps.
+  `Checkpoint.Plan` maps block lengths to exact source-step iterates and bridges
+  a source run of their sum to full-chain completion and copied-output cleanup.
+- The exact discrete temporary budget is `v ⌈/⌉ n + (n-1)s`.
+  The paper-rounded `v ⌈/⌉ n + ns` is one `s`-cell dump higher for
+  `n > 0`.  The verified ideal time is four source-level passes plus explicit
+  parameterized dump I/O.
+- The ceiling-square-root segment choice has a proved near-balanced bound but
+  is not claimed to minimize the discrete objective exactly.  The paper's
+  positive-real `2√(vs)` AM--GM statement is proved separately; nested
+  logarithmic-space/quadratic-time checkpointing remains speculative and
+  excluded.
 
 ## Working Assumptions to Test
 
-- A segmented-history theorem needs a restart dump that includes control and
-  head data as well as tape contents.  Its exact discrete cost should use
-  unequal-segment rounding and `n-1` intermediate dumps before comparing with
-  the paper's continuous `v/n+ns` relaxation.
-- Nested checkpointing may remain excluded: the paper offers no construction
-  from which to derive its speculative logarithmic-space/quadratic-time claim.
+- Nested checkpointing remains excluded: the paper offers no construction from
+  which to derive its speculative logarithmic-space/quadratic-time claim.  A
+  later extension would need an explicit recursive schedule, checkpoint
+  invariant, allocation model, and time/space proof.
 
 ## Success Metrics and Final Verification
 
@@ -331,7 +347,7 @@ Verify or correct Bennett's exact complexity claims under the formal cost model.
 
 ### 8-CHECKPOINTS — Segmented history and bounded claims
 
-**Status:** In progress.
+**Status:** Completed.
 
 #### Big Picture Objective
 
@@ -357,7 +373,19 @@ formal construction supports.
 
 ### 9-RELEASE-AUDIT — Traceability, examples, API, and final verification
 
-**Status:** Pending.
+**Status:** In progress.
+
+#### Current Facts
+
+- Stages 1–8 now have kernel-checked proof leaves.  The thin checkpoint API and
+  executable audit are integrated; their focused builds and the root `Bennett`
+  build pass, and their principal axiom sets contain only standard Lean/mathlib
+  foundations.  Stage 9 owns the final full pinned build, consolidated axiom
+  report, import/extension guidance, and end-to-end release report.
+- Stage 8 intentionally leaves nested checkpointing excluded and leaves
+  concrete dump allocation and target-level dump-I/O protocols parameterized;
+  these are documented scope boundaries, not proof holes in the exported
+  finite checkpoint theorem.
 
 #### Big Picture Objective
 
