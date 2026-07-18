@@ -135,9 +135,9 @@ The goal is complete only when all of the following are evidenced:
 8. Traceability and correction documents classify the paper's principal
    definitions, tables, theorem, resource claims, segmented-history discussion,
    and excluded physical discussion.
-9. `rg -n "sorry|admit|axiom"` has no unexplained hit in completed Lean modules,
-   `git diff --check` passes, and `#print axioms` audits of principal results are
-   recorded.
+9. Targeted scans find no proof holes, forbidden shortcuts, or project axiom
+   declarations; `git diff --check` passes, and `#print axioms` audits of
+   principal results are recorded.
 
 ## Stages
 
@@ -373,15 +373,18 @@ formal construction supports.
 
 ### 9-RELEASE-AUDIT — Traceability, examples, API, and final verification
 
-**Status:** In progress.
+**Status:** Completed.
 
 #### Current Facts
 
-- Stages 1–8 now have kernel-checked proof leaves.  The thin checkpoint API and
-  executable audit are integrated; their focused builds and the root `Bennett`
-  build pass, and their principal axiom sets contain only standard Lean/mathlib
-  foundations.  Stage 9 owns the final full pinned build, consolidated axiom
-  report, import/extension guidance, and end-to-end release report.
+- Stages 1–8 have kernel-checked proof leaves.  Stage 9 adds the diagnostic-only
+  `Bennett.Audit` umbrella, consolidated axiom report, release READMEs, and final
+  conventions/corrections/traceability audit.
+- `lake build Bennett`, full `lake build`, and `lake build Bennett.Audit` pass on
+  the pinned toolchain.  Direct replay of `Bennett/Audit.lean` reports only
+  `propext`, `Classical.choice`, and `Quot.sound` where applicable.
+- Targeted proof-hole, shortcut, project-axiom, import-boundary, stale-status,
+  line-length, and whitespace scans pass.  Public APIs contain no diagnostics.
 - Stage 8 intentionally leaves nested checkpointing excluded and leaves
   concrete dump allocation and target-level dump-I/O protocols parameterized;
   these are documented scope boundaries, not proof holes in the exported

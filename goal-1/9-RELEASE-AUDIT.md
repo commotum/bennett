@@ -1,6 +1,6 @@
 # 9-RELEASE-AUDIT
 
-**Status:** In progress.
+**Status:** Completed.
 
 ## Current Facts
 
@@ -8,21 +8,16 @@
   layers, executable source and reversible-target Turing semantics, Bennett's
   complete three-tape simulator, exact syntax/time/tape resource theorems, and
   finite checkpoint semantics with a discrete cost model.
-- Public APIs already exist for transition systems, histories, copying,
-  uncomputation, source/quadruple Turing machines, and the three-tape simulator.
-  Stage 9 is adding the final checkpoint re-export and must verify the complete
-  root import graph.
-- Diagnostic audit leaves contain executable counterexamples and `#print
-  axioms` commands.  Principal results inspected so far use only Lean/mathlib
-  foundations (`propext`, `Classical.choice`, and `Quot.sound`); no
-  project-specific axiom has been introduced.
-- `formal/README.md` is stale at the Stage 2–5 file layout, and the repository
-  root `README.md` is empty.  Import/extension guidance and final theorem
-  signatures therefore still need a release-level update.
-- Traceability already classifies the concrete simulator, resource results,
-  Table 2 gap, one-tape claim, standardization claim, checkpoint discussion,
-  nested speculation, and physical material.  Stage 9 must audit the final
-  wording against the actual exported names.
+- Thin public APIs and `import Bennett` expose every supported layer.  Audit
+  leaves and the `Bennett.Audit` umbrella remain outside the public import
+  graph.
+- The root and formal-project READMEs now document the module tree, exact
+  theorem surfaces, builds, cost conventions, extension workflow, and limits.
+- The release traceability, correction, convention, and axiom-audit documents
+  name the final declarations and preserve every partial, unresolved,
+  speculative, and excluded claim.
+- Principal audit results use only Lean/mathlib foundations (`propext`,
+  `Classical.choice`, and `Quot.sound`); no project axiom or `sorryAx` occurs.
 - The finite checkpoint result is abstract over complete restart states and a
   declared dump-cell/I/O model.  No concrete Turing tape allocator or nested
   logarithmic-space construction is claimed.
@@ -34,7 +29,7 @@
 - Record theorem signatures and axiom dependencies from Lean output rather
   than paraphrasing implementation details.
 - A full build verifies compilation but not documentation accuracy; separately
-  scan the traceability/correction tables for stale `planned`, `open`, and
+  scan the traceability/correction tables for stale lifecycle labels and
   overclaimed statuses.
 - Classify occurrences of words such as `axiom` or `admit` in prose and
   `#print axioms` diagnostics rather than treating a raw text hit as a proof
@@ -107,4 +102,27 @@ report without weakening or overstating the formal scope.
 
 ## Stage Results
 
-Pending final API, documentation, and release verification.
+- Added `Bennett.Audit`, a diagnostic-only umbrella over all seven audit leaves,
+  and recorded its principal declarations and literal axiom sets in
+  `docs/AXIOM-AUDIT.md`.
+- Replaced both READMEs with release guides covering narrow and root imports,
+  public theorem signatures, exact resource conventions, example workflows,
+  and extension points.
+- Audited `docs/CONVENTIONS.md`, `docs/CORRECTIONS.md`, and
+  `docs/TRACEABILITY.md` against the final namespace.  Table 2 and unrestricted
+  universality remain partial with exact missing obligations; standardization,
+  the one-tape simulator, concrete checkpoint allocation, nested checkpointing,
+  and physical claims remain unresolved, speculative, or excluded as
+  appropriate.
+- `cd formal && lake build Bennett` passed all 2027 jobs.
+- `cd formal && lake build` passed all 2027 jobs.
+- `cd formal && lake build Bennett.Audit` passed all 2026 jobs and replayed all
+  audit leaves.
+- `cd formal && lake env lean Bennett/Audit.lean` printed the consolidated
+  dependency sets.  Every set is a subset of `propext`, `Classical.choice`, and
+  `Quot.sound`; none contains `sorryAx`.
+- Proof-hole, forbidden-shortcut, project-axiom, public-audit-import, stale
+  status, non-table line-length, and whitespace scans passed.  Public modules
+  contain no `sorry`, `admit`, `native_decide`, or project `axiom` declaration.
+- The release meets the scoped objective: every completed claim is checked and
+  every omitted claim is traceably separated from the verified core.
