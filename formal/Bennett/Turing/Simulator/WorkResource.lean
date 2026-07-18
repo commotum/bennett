@@ -2,6 +2,28 @@ import Bennett.Turing.Simulator.Resource
 import Bennett.Turing.Simulator.Correctness
 import Lean.Elab.Tactic.Omega
 
+/-!
+# Work/output head resources for the complete three-tape simulator
+
+This module exposes the chronological source rule IDs underlying a standard
+computation and constructs the matching compute--copy--retrace schedule from
+those same IDs.  Its concrete target trace has work-head visited set exactly
+the source trace's visited set union the output delimiter traversal; the output
+head visits exactly that delimiter traversal.
+
+The scalar results deliberately distinguish raw head visits from a tape
+footprint.  Relative to raw source visits, copying can add every output cell
+that the source never scanned.  Relative to the source footprint, it adds at
+most the right delimiter, so the checked bound is explicitly named as a target
+*head-visit* bound against a source *footprint*.
+
+This module does not claim equality between the complete target work tape's
+`everNonblankPositions` and the source trace's `everNonblankPositions`.  That
+requires a separate per-state support-correspondence proof across both the
+forward and reverse appended execution traces.  Consequently, no theorem here
+silently promotes the head-visit bound to a total work-footprint theorem.
+-/
+
 namespace Bennett.Turing
 
 namespace Tape
@@ -502,24 +524,60 @@ def fullRules {source : Machine SourceControl Symbol}
   forwardRules source ruleIds ++ Copy.schedule normal output ++
     reverseRules source ruleIds
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 @[simp] theorem forwardRules_nil (source : Machine SourceControl Symbol) :
     forwardRules source [] = [] := rfl
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 @[simp] theorem forwardRules_cons (source : Machine SourceControl Symbol)
     (ruleId : source.RuleId) (ruleIds : List source.RuleId) :
     forwardRules source (ruleId :: ruleIds) =
       forwardPairRules source ruleId ++ forwardRules source ruleIds := by
   simp [forwardRules]
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 @[simp] theorem reverseRules_nil (source : Machine SourceControl Symbol) :
     reverseRules source [] = [] := rfl
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 theorem reverseRules_cons (source : Machine SourceControl Symbol)
     (ruleId : source.RuleId) (ruleIds : List source.RuleId) :
     reverseRules source (ruleId :: ruleIds) =
       reverseRules source ruleIds ++ reversePairRules source ruleId := by
   simp [reverseRules, List.flatMap_append]
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
+@[simp] theorem forwardRules_length (source : Machine SourceControl Symbol)
+    (ruleIds : List source.RuleId) :
+    (forwardRules source ruleIds).length = 2 * ruleIds.length := by
+  induction ruleIds with
+  | nil => rfl
+  | cons ruleId ruleIds ih =>
+      simp [forwardRules_cons, forwardPairRules, ih]
+      omega
+
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
+@[simp] theorem reverseRules_length (source : Machine SourceControl Symbol)
+    (ruleIds : List source.RuleId) :
+    (reverseRules source ruleIds).length = 2 * ruleIds.length := by
+  induction ruleIds with
+  | nil => rfl
+  | cons ruleId ruleIds ih =>
+      simp [reverseRules_cons, reversePairRules, ih]
+      omega
+
+/-- The matching explicit list has the same exact time formula as the semantic
+    correctness theorem: `4v + 4λ + 5`. -/
+@[simp] theorem fullRules_length
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (ruleIds : List source.RuleId) (output : List Symbol) :
+    (fullRules normal ruleIds output).length =
+      4 * ruleIds.length + 4 * output.length + 5 := by
+  simp [fullRules]
+  omega
+
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 /-- A matching source rule-ID schedule lifts to the explicit forward rule list,
     with chronological IDs accumulated newest-first on history. -/
 theorem forwardRules_scheduled_of_sourceScheduled
@@ -545,6 +603,7 @@ theorem forwardRules_scheduled_of_sourceScheduled
       simpa [forwardRules_cons, List.reverse_cons, List.append_assoc] using
         Quadruple.Scheduled.append hfirst htail
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 /-- The reverse list exactly retraces a matching source rule-ID schedule. -/
 theorem reverseRules_scheduled_of_sourceScheduled
     (source : Machine SourceControl Symbol)
@@ -571,6 +630,44 @@ theorem reverseRules_scheduled_of_sourceScheduled
         copiedOutput hscheduled.1 houtput
       simpa [reverseRules_cons, List.reverse_cons, List.append_assoc] using
         Quadruple.Scheduled.append htail hlast
+
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
+/-- Every generated forward rule belongs to the simulator's forward family. -/
+theorem onlyForwardRules_forwardRules
+    (source : Machine SourceControl Symbol) (ruleIds : List source.RuleId) :
+    OnlyForwardRules source (forwardRules source ruleIds) := by
+  induction ruleIds with
+  | nil => simp [forwardRules, OnlyForwardRules]
+  | cons ruleId ruleIds ih =>
+      rw [forwardRules_cons]
+      exact OnlyForwardRules.append source
+        (onlyForwardRules_pair source ruleId) ih
+
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
+/-- Every generated reverse rule belongs to the simulator's reverse family. -/
+theorem onlyReverseRules_reverseRules
+    (source : Machine SourceControl Symbol) (ruleIds : List source.RuleId) :
+    OnlyReverseRules source (reverseRules source ruleIds) := by
+  induction ruleIds with
+  | nil => simp [reverseRules, OnlyReverseRules]
+  | cons ruleId ruleIds ih =>
+      rw [reverseRules_cons]
+      exact OnlyReverseRules.append source ih
+        (onlyReverseRules_pair source ruleId)
+
+/-- Every rule of the generated complete schedule occurs in Table 1. -/
+theorem onlyTableRules_fullRules
+    {source : Machine SourceControl Symbol}
+    (normal : Standard.BennettNormalForm source)
+    (ruleIds : List source.RuleId) (output : List Symbol) :
+    OnlyTableRules normal (fullRules normal ruleIds output) := by
+  exact OnlyTableRules.append normal
+    (OnlyTableRules.append normal
+      (onlyTableRules_of_forward normal
+        (onlyForwardRules_forwardRules source ruleIds))
+      (onlyTableRules_copy normal output))
+    (onlyTableRules_of_reverse normal
+      (onlyReverseRules_reverseRules source ruleIds))
 
 /-- The exact `fullRules` list is a genuinely matching constructor schedule,
     not merely a raw displayed-rule execution. -/
@@ -613,47 +710,58 @@ theorem exists_fullRules_scheduled_of_computesIn
         (Standard.config normal.finish output) ∧
       Quadruple.Scheduled (fullRules normal ruleIds output)
         (initialConfiguration source normal.start input)
-        (finalConfiguration source normal.start input output) := by
+        (finalConfiguration source normal.start input output) ∧
+      OnlyTableRules normal (fullRules normal ruleIds output) := by
   obtain ⟨hrun, _⟩ := hcompute
   obtain ⟨ruleIds, hlength, hsource⟩ :=
     Machine.Resource.exists_scheduled_of_runs source hrun
   exact ⟨ruleIds, hlength, hsource,
-    fullRules_scheduled_of_sourceScheduled normal hsource⟩
+    fullRules_scheduled_of_sourceScheduled normal hsource,
+    onlyTableRules_fullRules normal ruleIds output⟩
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 @[simp] theorem forwardRewrite_work_offset
     (source : Machine SourceControl Symbol) (ruleId : source.RuleId) :
     ruleOffset .work (forwardRewriteRule source ruleId) = 0 := rfl
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 @[simp] theorem forwardRecord_work_offset
     (source : Machine SourceControl Symbol) (ruleId : source.RuleId) :
     ruleOffset .work (forwardRecordRule source ruleId) =
       (source.rule ruleId).move.offset := rfl
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 @[simp] theorem reverseErase_work_offset
     (source : Machine SourceControl Symbol) (ruleId : source.RuleId) :
     ruleOffset .work (reverseEraseRule source ruleId) =
       (source.rule ruleId).move.inverse.offset := rfl
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 @[simp] theorem reverseRestore_work_offset
     (source : Machine SourceControl Symbol) (ruleId : source.RuleId) :
     ruleOffset .work (reverseRestoreRule source ruleId) = 0 := rfl
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 @[simp] theorem forwardRewrite_output_offset
     (source : Machine SourceControl Symbol) (ruleId : source.RuleId) :
     ruleOffset .output (forwardRewriteRule source ruleId) = 0 := rfl
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 @[simp] theorem forwardRecord_output_offset
     (source : Machine SourceControl Symbol) (ruleId : source.RuleId) :
     ruleOffset .output (forwardRecordRule source ruleId) = 0 := rfl
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 @[simp] theorem reverseErase_output_offset
     (source : Machine SourceControl Symbol) (ruleId : source.RuleId) :
     ruleOffset .output (reverseEraseRule source ruleId) = 0 := rfl
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 @[simp] theorem reverseRestore_output_offset
     (source : Machine SourceControl Symbol) (ruleId : source.RuleId) :
     ruleOffset .output (reverseRestoreRule source ruleId) = 0 := rfl
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 theorem forward_work_finalHead (source : Machine SourceControl Symbol)
     (position : Int) (ruleIds : List source.RuleId) :
     finalHead .work position (forwardRules source ruleIds) =
@@ -661,8 +769,9 @@ theorem forward_work_finalHead (source : Machine SourceControl Symbol)
   induction ruleIds generalizing position with
   | nil => rfl
   | cons ruleId ruleIds ih =>
-      simp [forwardRules_cons, forwardPairRules, finalHead_append, ih]
+      simp [forwardRules_cons, forwardPairRules, ih]
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 theorem forward_work_headPositions (source : Machine SourceControl Symbol)
     (position : Int) (ruleIds : List source.RuleId) :
     headPositions .work position (forwardRules source ruleIds) =
@@ -670,9 +779,10 @@ theorem forward_work_headPositions (source : Machine SourceControl Symbol)
   induction ruleIds generalizing position with
   | nil => simp
   | cons ruleId ruleIds ih =>
-      simp [forwardRules_cons, forwardPairRules, headPositions_append,
-        ih, Machine.Resource.headPositions_cons]
+      simp [forwardRules_cons, forwardPairRules, ih,
+        Machine.Resource.headPositions_cons]
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 theorem reverse_work_finalHead (source : Machine SourceControl Symbol)
     (position : Int) (ruleIds : List source.RuleId) :
     finalHead .work (Machine.Resource.finalHead source position ruleIds)
@@ -686,6 +796,7 @@ theorem reverse_work_finalHead (source : Machine SourceControl Symbol)
         reverseErase_work_offset, reverseRestore_work_offset]
       cases (source.rule ruleId).move <;> simp [Move.offset, Move.inverse]
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 theorem reverse_work_headPositions (source : Machine SourceControl Symbol)
     (position : Int) (ruleIds : List source.RuleId) :
     headPositions .work
@@ -704,6 +815,7 @@ theorem reverse_work_headPositions (source : Machine SourceControl Symbol)
         simp [Move.offset, Move.inverse,
           Machine.Resource.start_mem_headPositions]
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 @[simp] theorem forward_output_finalHead
     (source : Machine SourceControl Symbol)
     (position : Int) (ruleIds : List source.RuleId) :
@@ -713,6 +825,7 @@ theorem reverse_work_headPositions (source : Machine SourceControl Symbol)
   | cons ruleId ruleIds ih =>
       simp [forwardRules_cons, forwardPairRules, ih]
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 @[simp] theorem reverse_output_finalHead
     (source : Machine SourceControl Symbol)
     (position : Int) (ruleIds : List source.RuleId) :
@@ -723,6 +836,7 @@ theorem reverse_work_headPositions (source : Machine SourceControl Symbol)
       rw [reverseRules_cons, finalHead_append, ih]
       simp [reversePairRules]
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 theorem forward_output_headPositions
     (source : Machine SourceControl Symbol)
     (position : Int) (ruleIds : List source.RuleId) :
@@ -731,8 +845,9 @@ theorem forward_output_headPositions
   induction ruleIds generalizing position with
   | nil => simp
   | cons ruleId ruleIds ih =>
-      simp [forwardRules_cons, forwardPairRules, headPositions_append, ih]
+      simp [forwardRules_cons, forwardPairRules, ih]
 
+omit [DecidableEq SourceControl] [DecidableEq Symbol] in
 theorem reverse_output_headPositions
     (source : Machine SourceControl Symbol)
     (position : Int) (ruleIds : List source.RuleId) :
@@ -824,7 +939,7 @@ theorem fullRules_work_headPositions
     copy_work_headPositions, finalHead_append,
     forward_work_finalHead, hfinish, copy_work_finalHead]
   rw [← hfinish, reverse_work_headPositions]
-  simp [Finset.union_assoc, Finset.union_left_comm, Finset.union_comm]
+  simp [Finset.union_left_comm, Finset.union_comm]
 
 /-- Exact output-head set of the complete displayed construction. -/
 theorem fullRules_output_headPositions
@@ -1011,4 +1126,3 @@ theorem fullTrace_output_visitedPositions
 
 end Simulator.Resource
 end Bennett.Turing
-
