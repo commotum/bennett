@@ -11,3 +11,4 @@ wheels/
 
 # Lean/Lake build artifacts and downloaded dependencies
 formal/.lake/
+.DS_Store
